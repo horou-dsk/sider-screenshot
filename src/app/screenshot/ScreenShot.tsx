@@ -1,5 +1,7 @@
-import { createSignal, onCleanup, onMount, Show } from "solid-js";
+import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js";
 import { cursorPosition, getCurrentWindow } from "@tauri-apps/api/window";
+import ScreenShotToolbar from "./components/ScreenShotToolbar";
+import "./screenshot.css";
 
 type WindowInfo = {
   title: string;
@@ -10,18 +12,30 @@ type WindowInfo = {
   hwnd: string;
 };
 
+enum DragDirection {
+  NW, // 左上
+  NE, // 右上
+  SW, // 左下
+  SE, // 右下
+  N, // 上
+  S, // 下
+  W, // 左
+  E,
+}
+
+const DOWN = {
+  selection: false,
+  move: false,
+  start: { x: 0, y: 0 },
+  selected: false,
+  dragDirection: DragDirection.NW,
+  drag: false,
+};
+
 function ScreenShot() {
   const [imageLoaded, setImageLoaded] = createSignal(false);
-  const [mouseDown, setMouseDown] = createSignal({
-    down: false,
-    start: { x: 0, y: 0 },
-    selected: false,
-  });
-  const [cropMove, setCropMove] = createSignal({
-    down: false,
-    startX: 0,
-    startY: 0,
-  });
+  const [down, setDown] = createSignal(DOWN);
+  const [cropMoveing, setCropMoveing] = createSignal(false);
   let border_width = 2;
   const [cropRect, setCropRect] = createSignal({
     x: 0,
@@ -29,6 +43,9 @@ function ScreenShot() {
     width: 0,
     height: 0,
   });
+  const cropBottom = createMemo(
+    () => window.innerHeight - (cropRect().y + cropRect().height)
+  );
   const [windowsInfo, setWindowsInfo] = createSignal<WindowInfo[]>([]);
   const [screenshotUrl, setScreenshotUrl] = createSignal("");
   const win = getCurrentWindow();
@@ -37,8 +54,7 @@ function ScreenShot() {
     setScreenshotUrl("");
     setImageLoaded(false);
     setCropRect({ x: 0, y: 0, width: 0, height: 0 });
-    setMouseDown({ down: false, selected: false, start: { x: 0, y: 0 } });
-    setCropMove({ down: false, startX: 0, startY: 0 });
+    setDown(DOWN);
   };
 
   const handleSelectWindow = (clientX: number, clientY: number) => {
@@ -60,19 +76,104 @@ function ScreenShot() {
     }
   };
   const handleCropSelection = (clientX: number, clientY: number) => {
-    if (!mouseDown().selected) {
-      if (mouseDown().down) {
-        setCropRect({
-          x: Math.floor(Math.min(mouseDown().start.x, clientX)),
-          y: Math.floor(Math.min(mouseDown().start.y, clientY)),
-          width: Math.floor(Math.abs(clientX - mouseDown().start.x)),
-          height: Math.floor(Math.abs(clientY - mouseDown().start.y)),
-        });
-      } else {
-        handleSelectWindow(clientX, clientY);
+    const _down = down();
+    setCropRect({
+      x: Math.floor(Math.min(_down.start.x, clientX)),
+      y: Math.floor(Math.min(_down.start.y, clientY)),
+      width: Math.floor(Math.abs(clientX - _down.start.x)),
+      height: Math.floor(Math.abs(clientY - _down.start.y)),
+    });
+  };
+  const handleCropMove = (clientX: number, clientY: number) => {
+    const rect = cropRect();
+    // 限制裁剪区域不能超出屏幕
+    const maxX = window.innerWidth - rect.width;
+    const maxY = window.innerHeight - rect.height;
+    setCropRect({
+      ...rect,
+      x: Math.min(Math.max(0, clientX - down().start.x), maxX),
+      y: Math.min(Math.max(0, clientY - down().start.y), maxY),
+    });
+  };
+
+  const handleDragResizeMouseDown =
+    (direction: DragDirection) => (event: MouseEvent) => {
+      event.stopPropagation();
+      let start = { x: 0, y: 0 };
+      switch (direction) {
+        case DragDirection.NW:
+          start = {
+            x: cropRect().x + cropRect().width,
+            y: cropRect().y + cropRect().height,
+          };
+          break;
+        case DragDirection.NE:
+        case DragDirection.N:
+          start = {
+            x: cropRect().x,
+            y: cropRect().y + cropRect().height,
+          };
+          break;
+        case DragDirection.SW:
+        case DragDirection.W:
+          start = {
+            x: cropRect().x + cropRect().width,
+            y: cropRect().y,
+          };
+          break;
+        case DragDirection.SE:
+        case DragDirection.S:
+        case DragDirection.E:
+          start = {
+            x: cropRect().x,
+            y: cropRect().y,
+          };
+          break;
       }
+      setDown({
+        ...down(),
+        dragDirection: direction,
+        drag: true,
+        start,
+      });
+    };
+
+  const handleMouseMove = (event: MouseEvent) => {
+    const _down = down();
+    if (_down.selection) {
+      handleCropSelection(event.clientX, event.clientY);
+      setCropMoveing(true);
+    } else if (_down.move) {
+      handleCropMove(event.clientX, event.clientY);
+      setCropMoveing(true);
+    } else if (_down.drag) {
+      switch (_down.dragDirection) {
+        case DragDirection.NW:
+        case DragDirection.NE:
+        case DragDirection.SW:
+        case DragDirection.SE:
+          handleCropSelection(event.clientX, event.clientY);
+          break;
+        case DragDirection.N:
+        case DragDirection.S:
+          handleCropSelection(_down.start.x + cropRect().width, event.clientY);
+          break;
+        case DragDirection.W:
+        case DragDirection.E:
+          handleCropSelection(event.clientX, _down.start.y + cropRect().height);
+          break;
+      }
+      setCropMoveing(true);
+    } else if (!_down.selected) {
+      handleSelectWindow(event.clientX, event.clientY);
     }
   };
+
+  window.addEventListener("mousemove", handleMouseMove);
+
+  onCleanup(() => {
+    window.removeEventListener("mousemove", handleMouseMove);
+  });
 
   onMount(() => {
     let unMount = false;
@@ -83,7 +184,6 @@ function ScreenShot() {
         setScreenshotUrl(
           "http://localhost:8088/sys/screenshot/get?timestamp=" + Date.now()
         );
-        console.log(info);
         setWindowsInfo(
           info.map((item) => ({
             ...item,
@@ -132,7 +232,6 @@ function ScreenShot() {
           class="absolute top-0 left-0 max-w-none select-none"
         />
       </Show>
-
       <Show when={screenshotUrl() !== ""}>
         <div
           class="fixed top-0 left-0 w-full h-full"
@@ -140,63 +239,50 @@ function ScreenShot() {
             "bg-black/50": imageLoaded(),
           }}
           onMouseDown={(event) => {
-            setMouseDown({
-              down: true,
+            setDown({
+              ...down(),
+              selection: true,
               start: { x: event.clientX, y: event.clientY },
-              selected: false,
             });
           }}
           onMouseUp={() => {
-            setMouseDown({ ...mouseDown(), down: false, selected: true });
-          }}
-          onMouseMove={(event) => {
-            handleCropSelection(event.clientX, event.clientY);
+            setDown({ ...DOWN, selection: false, selected: true });
+            setCropMoveing(false);
           }}
         >
           <div
             style={{
               left: `${cropRect().x}px`,
               top: `${cropRect().y}px`,
-              cursor: mouseDown().selected ? "move" : "default",
+              cursor: down().selected ? "move" : "default",
             }}
             class="fixed"
             onMouseDown={(event) => {
-              if (mouseDown().selected) {
+              if (down().selected) {
                 event.stopPropagation();
-                setCropMove({
-                  down: true,
-                  startX: event.clientX - cropRect().x,
-                  startY: event.clientY - cropRect().y,
-                });
-              }
-            }}
-            onMouseMove={(event) => {
-              if (mouseDown().selected && cropMove().down) {
-                event.stopPropagation();
-                const rect = cropRect();
-                // 限制裁剪区域不能超出屏幕
-                const maxX = window.innerWidth - rect.width;
-                const maxY = window.innerHeight - rect.height;
-                setCropRect({
-                  ...rect,
-                  x: Math.min(
-                    Math.max(0, event.clientX - cropMove().startX),
-                    maxX
-                  ),
-                  y: Math.min(
-                    Math.max(0, event.clientY - cropMove().startY),
-                    maxY
-                  ),
+                setDown({
+                  ...down(),
+                  move: true,
+                  start: {
+                    x: event.clientX - cropRect().x,
+                    y: event.clientY - cropRect().y,
+                  },
                 });
               }
             }}
             onMouseUp={(event) => {
-              if (mouseDown().selected && cropMove().down) {
+              if (down().move || down().drag) {
                 event.stopPropagation();
-                setCropMove({ down: false, startX: 0, startY: 0 });
+                setDown({
+                  ...down(),
+                  move: false,
+                  drag: false,
+                });
+                setCropMoveing(false);
               }
             }}
           >
+            {/* 裁剪大小 */}
             <div
               class="text-sm absolute left-2 bg-gray-800 rounded-md h-6 px-4 flex items-center whitespace-nowrap z-10"
               classList={{
@@ -207,6 +293,20 @@ function ScreenShot() {
               {Math.ceil(window.devicePixelRatio * cropRect().width)} *{" "}
               {Math.ceil(window.devicePixelRatio * cropRect().height)}
             </div>
+            {/* 工具栏 */}
+            <Show when={!cropMoveing() && down().selected}>
+              <div
+                class="absolute z-10 fade-scale-in cursor-default"
+                onMouseDown={(event) => event.stopPropagation()}
+                onMouseUp={(event) => event.stopPropagation()}
+                classList={{
+                  "bottom-2 right-2": cropBottom() <= 100,
+                  "-bottom-12 right-0": cropBottom() > 100,
+                }}
+              >
+                <ScreenShotToolbar onClose={hide} onSave={() => {}} />
+              </div>
+            </Show>
             <div
               style={{
                 width: `${cropRect().width}px`,
@@ -238,6 +338,48 @@ function ScreenShot() {
                 />
               </div>
             </div>
+            <Show when={down().selected}>
+              {/* 左上角拖动点 */}
+              <div
+                onMouseDown={handleDragResizeMouseDown(DragDirection.NW)}
+                class="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full z-10 cursor-nw-resize border border-blue-300"
+              ></div>
+              {/* 右上角拖动点 */}
+              <div
+                onMouseDown={handleDragResizeMouseDown(DragDirection.NE)}
+                class="absolute right-0 top-0 translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full z-10 cursor-ne-resize border border-blue-300"
+              ></div>
+              {/* 左下角拖动点 */}
+              <div
+                onMouseDown={handleDragResizeMouseDown(DragDirection.SW)}
+                class="absolute left-0 bottom-0 -translate-x-1/2 translate-y-1/2 w-2 h-2 bg-white rounded-full z-10 cursor-sw-resize border border-blue-300"
+              ></div>
+              {/* 右下角拖动点 */}
+              <div
+                onMouseDown={handleDragResizeMouseDown(DragDirection.SE)}
+                class="absolute right-0 bottom-0 translate-x-1/2 translate-y-1/2 w-2 h-2 bg-white rounded-full z-10 cursor-se-resize border border-blue-300"
+              ></div>
+              {/* 上拖动点 */}
+              <div
+                onMouseDown={handleDragResizeMouseDown(DragDirection.N)}
+                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full z-10 cursor-n-resize border border-blue-300"
+              ></div>
+              {/* 下拖动点 */}
+              <div
+                onMouseDown={handleDragResizeMouseDown(DragDirection.S)}
+                class="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-2 h-2 bg-white rounded-full z-10 cursor-s-resize border border-blue-300"
+              ></div>
+              {/* 左拖动点 */}
+              <div
+                onMouseDown={handleDragResizeMouseDown(DragDirection.W)}
+                class="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full z-10 cursor-w-resize border border-blue-300"
+              ></div>
+              {/* 右拖动点 */}
+              <div
+                onMouseDown={handleDragResizeMouseDown(DragDirection.E)}
+                class="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full z-10 cursor-e-resize border border-blue-300"
+              ></div>
+            </Show>
           </div>
         </div>
       </Show>
