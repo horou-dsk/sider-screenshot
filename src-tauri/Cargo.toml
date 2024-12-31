@@ -1,5 +1,5 @@
 [package]
-name = "sider-screenshot"
+name = "sider-tauri"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
@@ -11,17 +11,19 @@ edition = "2021"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "sider_screenshot_lib"
+name = "sider_tauri_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "time", "macros"] }
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sider-local-ai = { path = "C:/Users/xly_t/Krysha/Code/Projects/Sider/sider-local-ai" }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [

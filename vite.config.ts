@@ -5,7 +5,7 @@ import tailwindcss from "tailwindcss";
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig(async ({ mode }) => ({
   plugins: [solid()],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
@@ -38,4 +38,6 @@ export default defineConfig(async () => ({
       ],
     },
   },
+
+  base: "/sider/",
 }));

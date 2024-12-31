@@ -4,11 +4,11 @@ import "./App.css";
 
 const routes = [
   {
-    path: "/",
+    path: "/sider",
     component: lazy(() => import("./app/root/Root.tsx")),
   },
   {
-    path: "/screenshot",
+    path: "/sider/screenshot",
     component: lazy(() => import("./app/screenshot/ScreenShot.tsx")),
   },
 ];
