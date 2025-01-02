@@ -1,16 +1,10 @@
-import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js";
+import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { cursorPosition, getCurrentWindow } from "@tauri-apps/api/window";
 import ScreenShotToolbar from "./components/ScreenShotToolbar";
 import "./screenshot.css";
-
-type WindowInfo = {
-  title: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  hwnd: string;
-};
+import { invoke } from "@tauri-apps/api/core";
+import { MonitorInfo, ShotShowWindowPayload, WindowInfo } from "../types";
+import { getDpiPx } from "../../utils";
 
 enum DragDirection {
   NW, // 左上
@@ -32,8 +26,13 @@ const DOWN = {
   drag: false,
 };
 
+type ScreenShot = {
+  monitorInfo: MonitorInfo;
+  screenshotUrl: string;
+}
+
 function ScreenShot() {
-  const [imageLoaded, setImageLoaded] = createSignal(false);
+  const [imageLoadedIndex, setImageLoadedIndex] = createSignal(0);
   const [down, setDown] = createSignal(DOWN);
   const [cropMoveing, setCropMoveing] = createSignal(false);
   let border_width = 2;
@@ -47,12 +46,13 @@ function ScreenShot() {
     () => window.innerHeight - (cropRect().y + cropRect().height)
   );
   const [windowsInfo, setWindowsInfo] = createSignal<WindowInfo[]>([]);
-  const [screenshotUrl, setScreenshotUrl] = createSignal("");
+  const [screenShots, setScreenShots] = createSignal<ScreenShot[]>([]);
   const win = getCurrentWindow();
+  const imageLoaded = createMemo(() => imageLoadedIndex() === screenShots().length);
   const hide = () => {
-    win.hide();
-    setScreenshotUrl("");
-    setImageLoaded(false);
+    invoke("hide_window");
+    setScreenShots([]);
+    setImageLoadedIndex(0);
     setCropRect({ x: 0, y: 0, width: 0, height: 0 });
     setDown(DOWN);
   };
@@ -180,10 +180,13 @@ function ScreenShot() {
     let unlisten: () => void | undefined;
     win
       .listen("show-window", (event) => {
-        const info = event.payload as WindowInfo[];
-        setScreenshotUrl(
-          "http://localhost:8088/sys/screenshot/get?timestamp=" + Date.now()
-        );
+        const payload = event.payload as ShotShowWindowPayload;
+        const info = payload.window_info;
+        console.log(info);
+        setScreenShots(payload.monitor_info.map((v) => ({
+          monitorInfo: v,
+          screenshotUrl: `http://localhost:8088/sys/screenshot/get?screen_name=${encodeURIComponent(v.name)}&timestamp=` + Date.now()
+        })));
         setWindowsInfo(
           info.map((item) => ({
             ...item,
@@ -221,18 +224,25 @@ function ScreenShot() {
   });
   return (
     <main class="h-screen w-screen select-none">
-      <Show when={screenshotUrl() !== ""}>
-        <img
-          src={screenshotUrl()}
-          alt=""
-          style={{
-            width: window.innerWidth + "px",
-            height: window.innerHeight + "px",
-          }}
-          class="absolute top-0 left-0 max-w-none select-none"
-        />
+      <Show when={screenShots().length}>
+        <For each={screenShots()}>
+          {({ monitorInfo, screenshotUrl }) => (
+            <img
+            src={screenshotUrl}
+            alt=""
+            style={{
+              width: getDpiPx(monitorInfo.width) + "px",
+              height: getDpiPx(monitorInfo.height) + "px",
+              left: getDpiPx(monitorInfo.x) + "px",
+              top: getDpiPx(monitorInfo.y) + "px",
+            }}
+            class="absolute max-w-none select-none"
+          />
+          )}
+        </For>
+        
       </Show>
-      <Show when={screenshotUrl() !== ""}>
+      <Show when={screenShots().length}>
         <div
           class="fixed top-0 left-0 w-full h-full"
           classList={{
@@ -322,20 +332,27 @@ function ScreenShot() {
                   top: `-${cropRect().y + border_width}px`,
                 }}
               >
-                <img
-                  src={screenshotUrl()}
+                <For each={screenShots()}>
+                  {({ screenshotUrl, monitorInfo }) => (
+                    <img
+                  src={screenshotUrl}
                   onLoad={() => {
-                    setImageLoaded(true);
+                    setImageLoadedIndex(imageLoadedIndex() + 1);
                   }}
                   alt=""
                   style={{
-                    width: window.innerWidth + "px",
-                    height: window.innerHeight + "px",
+                    width: getDpiPx(monitorInfo.width) + "px",
+                    height: getDpiPx(monitorInfo.height) + "px",
+                    left: getDpiPx(monitorInfo.x) + "px",
+                    top: getDpiPx(monitorInfo.y) + "px",
                     "image-rendering": "crisp-edges",
                   }}
                   draggable={false}
                   class="max-w-none select-none absolute top-0 left-0"
                 />
+                  )}
+                </For>
+                
               </div>
             </div>
             <Show when={down().selected}>

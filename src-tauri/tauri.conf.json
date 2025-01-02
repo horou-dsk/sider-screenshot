@@ -16,16 +16,17 @@
         "url": "/sider",
         "width": 800,
         "height": 600,
-        "devtools": true
+        "devtools": true,
+        "transparent": true
       },
       {
         "title": "sider-screenshot",
         "label": "screenshot",
-        "fullscreen": true,
         "url": "/sider/screenshot",
         "visible": false,
-        "skipTaskbar": true,
-        "transparent": true
+        "skipTaskbar": false,
+        "transparent": true,
+        "alwaysOnTop": false
       }
     ],
     "security": {

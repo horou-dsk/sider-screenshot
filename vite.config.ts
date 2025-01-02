@@ -39,5 +39,5 @@ export default defineConfig(async ({ mode }) => ({
     },
   },
 
-  base: "/sider/",
+  base: "/sider",
 }));

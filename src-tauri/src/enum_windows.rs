@@ -1,8 +1,7 @@
 use serde::Serialize;
 use windows::Win32::Foundation::{BOOL, HWND, LPARAM, RECT};
 use windows::Win32::UI::WindowsAndMessaging::{
-    EnumChildWindows, EnumWindows, GetSystemMetrics, GetWindowRect, GetWindowTextW,
-    IsWindowVisible, SM_CXSCREEN, SM_CYSCREEN,
+    EnumChildWindows, EnumWindows, GetWindowRect, GetWindowTextW, IsWindowVisible,
 };
 
 struct Callback<'a>(HWND, &'a mut dyn FnMut(HWND) -> bool);
@@ -50,11 +49,11 @@ pub struct WindowInfo {
 
 pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
     println!("skip_hwnd: {:?}", skip_hwnd);
-    let (screen_width, screen_height) = unsafe {
-        let width = GetSystemMetrics(SM_CXSCREEN);
-        let height = GetSystemMetrics(SM_CYSCREEN);
-        (width, height)
-    };
+    let displays = display_info::DisplayInfo::all().unwrap();
+    let max_width = displays.iter().map(|info| info.width).max().unwrap() as i32;
+    let max_height = displays.iter().map(|info| info.height).max().unwrap() as i32;
+    let min_x = displays.iter().map(|info| info.x).min().unwrap();
+    let min_y = displays.iter().map(|info| info.y).min().unwrap();
 
     let mut windows_info = vec![];
 
@@ -71,19 +70,27 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
             let mut rect = RECT::default();
             if unsafe { GetWindowRect(hwnd, &mut rect).is_ok() } {
                 let title_str = String::from_utf16_lossy(&title);
-                if rect.left < -screen_width || rect.top < -screen_height {
+                if rect.left < -max_width || rect.top < -max_width {
                     return true;
                 }
                 // 如果为负数，则为零
-                let left = if rect.left < 0 { 0 } else { rect.left };
-                let top = if rect.top < 0 { 0 } else { rect.top };
-                let right = if rect.right > screen_width {
-                    screen_width
+                let left = if rect.left < min_x {
+                    0
+                } else {
+                    rect.left - min_x
+                };
+                let top = if rect.top < min_y {
+                    0
+                } else {
+                    rect.top - min_y
+                };
+                let right = if rect.right > max_width {
+                    max_width
                 } else {
                     rect.right
                 };
-                let bottom = if rect.bottom > screen_height {
-                    screen_height
+                let bottom = if rect.bottom > max_height {
+                    max_height
                 } else {
                     rect.bottom
                 };
@@ -92,8 +99,8 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
                     title: title_str,
                     x: left,
                     y: top,
-                    width: right - left,
-                    height: bottom - top,
+                    width: (right - min_x) - left,
+                    height: (bottom - min_y) - top,
                 });
             }
         }
