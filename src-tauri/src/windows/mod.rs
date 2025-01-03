@@ -63,3 +63,5 @@ pub fn set_visible_window(hwnd: HWND) -> windows::core::Result<()> {
     }
     Ok(())
 }
+
+pub mod image_clipboard;

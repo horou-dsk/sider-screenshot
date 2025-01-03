@@ -4550,6 +4550,7 @@ name = "sider-tauri"
 version = "0.1.0"
 dependencies = [
  "display-info",
+ "image",
  "serde",
  "serde_json",
  "sider-local-ai",

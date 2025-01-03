@@ -68,6 +68,29 @@ fn hide_window(window: tauri::Window) -> tauri::Result<()> {
     Ok(())
 }
 
+// #[tauri::command]
+// fn image_to_clipboard(image: Vec<u8>, _width: u32, _height: u32) {
+//     // let mut file = File::create("test.png").unwrap();
+//     // file.write_all(&image).unwrap();
+//     let png_image = image::load_from_memory(&image).unwrap();
+//     let img = gen_from_img(&png_image);
+//     // if let Err(err) = set_image_to_clipboard(bytes, width, height) {
+//     //     println!("Error: {}", err);
+//     // }
+//     // let mut w = std::io::Cursor::new(Vec::new());
+//     // png_image.write_to(&mut w, image::ImageFormat::Bmp).unwrap();
+//     // if let Err(err) = set_clipboard(clipboard_win::formats::Bitmap, img) {
+//     //     println!("Error: {}", err);
+//     // }
+//     // if let Err(err) = clipboard.set_image(ImageData {
+//     //     width,
+//     //     height,
+//     //     bytes: Cow::Owned(rgba_image.to_vec()),
+//     // }) {
+//     //     println!("Error: {}", err);
+//     // }
+// }
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -77,7 +100,7 @@ pub fn run() {
             get_foreground_window_info,
             get_display_info,
             mutiple_monitor_fullscreen,
-            hide_window
+            hide_window,
         ])
         .setup(|app| {
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
