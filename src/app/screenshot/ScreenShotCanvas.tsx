@@ -96,8 +96,8 @@ function ScreenShotCanvas(props: {
   //   console.log("destroy");
   // });
 
-  onMount(() => {
-    const _rect = rect();
+  const drawImage = (rect: Rect) => {
+    const _rect = rect;
     const ctx = canvas!.getContext("2d");
     // console.log(_rect);
     for (const { image, monitorInfo } of props.screenShots) {
@@ -107,12 +107,17 @@ function ScreenShotCanvas(props: {
         width: monitorInfo.width,
         height: monitorInfo.height,
       };
-      // console.log(info);
-      ctx!.drawImage(image, info.x, info.y, info.width, info.height);
+      console.log(info);
+      ctx!.drawImage(image, info.x, info.y);
     }
+  };
+
+  onMount(() => {
+    const _rect = rect();
 
     props.ref?.({
       capture: async () => {
+        drawImage(_rect);
         return {
           bytes: await canvasToUint8Array(canvas!),
           width: _rect.width,

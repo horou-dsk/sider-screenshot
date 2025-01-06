@@ -14,6 +14,8 @@ import { ShotShowWindowPayload, WindowInfo } from "../types";
 import { getDpiPx } from "../../utils";
 import { CanvasRenderImage, ScreenShotImage } from "./types";
 import ScreenShotCanvas, { ScreenShotCanvasRef } from "./ScreenShotCanvas";
+import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
+import { screen_capture } from "./capture";
 
 enum DragDirection {
   NW, // 左上
@@ -215,6 +217,7 @@ function ScreenShot() {
             position.y / window.devicePixelRatio
           );
         });
+        win.setFocus();
       })
       .then((_unlisten) => {
         if (!unMount) {
@@ -229,10 +232,17 @@ function ScreenShot() {
       }
     };
     window.addEventListener("keyup", handleKeyUp);
+    register("CommandOrControl+Alt+A", (event) => {
+      console.log("CommandOrControl+Alt+A");
+      if (event.state === "Pressed") {
+        screen_capture();
+      }
+    });
     onCleanup(() => {
       unMount = true;
       unlisten?.();
       window.removeEventListener("keyup", handleKeyUp);
+      unregister("CommandOrControl+Alt+A");
     });
   });
   return (
@@ -269,7 +279,7 @@ function ScreenShot() {
         <div
           class="fixed top-0 left-0 w-full h-full"
           classList={{
-            "bg-black/50": imageLoaded(),
+            "bg-black/30": imageLoaded(),
           }}
           onMouseDown={(event) => {
             setDown({

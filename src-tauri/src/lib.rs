@@ -9,11 +9,6 @@ mod enum_windows;
 mod windows;
 
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-#[tauri::command]
 fn get_foreground_window_info(app: tauri::AppHandle) -> Vec<WindowInfo> {
     let window = app.get_webview_window("screenshot").unwrap();
     enum_windows::get_foreground_window_info(window.hwnd().unwrap())
@@ -96,13 +91,14 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            greet,
             get_foreground_window_info,
             get_display_info,
             mutiple_monitor_fullscreen,
             hide_window,
         ])
         .setup(|app| {
+            app.handle()
+                .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
             Ok(())
