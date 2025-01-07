@@ -19,8 +19,8 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "time", "macros"] }
-tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+tauri = { version = "2.2", features = [] }
+tauri-plugin-opener = "2.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sider-local-ai = { path = "C:/Users/xly_t/Krysha/Code/Projects/Sider/sider-local-ai" }
@@ -48,3 +48,6 @@ windows = { version = "0.58", features = [
     "Win32_UI_HiDpi",
     "Win32_Graphics_Gdi",
 ] }
+
+[profile.release]
+lto = true

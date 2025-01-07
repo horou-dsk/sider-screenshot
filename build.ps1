@@ -13,5 +13,6 @@ if (Test-Path .\dist) {
 }
 Copy-Item ..\..\..\dist .\dist -Recurse
 
+# upx -9 sider.exe
 7z.exe a sider.zip dist\ sider.exe
 Pop-Location

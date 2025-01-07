@@ -2,10 +2,12 @@
 
 use enum_windows::WindowInfo;
 use serde::Serialize;
+use sider::LocalServe;
 use tauri::Manager;
 use windows::{set_visible_window, set_window_size, set_window_style};
 
 mod enum_windows;
+mod sider;
 mod windows;
 
 #[tauri::command]
@@ -101,6 +103,7 @@ pub fn run() {
                 .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
+            LocalServe { screenshot_window }.local_serve_run();
             Ok(())
         })
         .run(tauri::generate_context!())

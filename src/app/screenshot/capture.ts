@@ -19,14 +19,6 @@ export async function screen_capture() {
     const max_height = Math.max(...monitor_info.map((i) => i.height));
     const width = max_width - min_x;
     const height = max_height - min_y;
-    // console.log(min_x, min_y, width, height);
-    // console.log(
-    //   monitor_info.map((v) => ({
-    //     ...v,
-    //     x: v.x - min_x,
-    //     y: v.y - min_y,
-    //   }))
-    // );
     await invoke("mutiple_monitor_fullscreen", {
       windowLabel: "screenshot",
       x: min_x,
