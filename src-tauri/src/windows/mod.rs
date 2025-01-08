@@ -33,13 +33,11 @@ pub fn set_window_size(
 ) -> windows::core::Result<()> {
     unsafe {
         // 移动窗口到全屏
-        let now = std::time::Instant::now();
         SetWindowPos(hwnd, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW)?;
 
         let _ = ShowWindow(hwnd, SW_SHOW);
         let _ = SetForegroundWindow(hwnd);
 
-        println!("设置窗口大小耗时: {}ms", now.elapsed().as_millis());
         // 添加分层窗口样式
         // let style = GetWindowLongW(hwnd, GWL_STYLE);
         // SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED.0 as i32);

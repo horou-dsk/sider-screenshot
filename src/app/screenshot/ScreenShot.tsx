@@ -231,10 +231,7 @@ function ScreenShot() {
     window.addEventListener("keyup", handleKeyUp);
     register("CommandOrControl+Alt+A", (event) => {
       if (event.state === "Pressed") {
-        const now = Date.now();
-        screen_capture().then(() => {
-          console.log(Date.now() - now);
-        });
+        screen_capture();
       }
     });
     onCleanup(() => {
