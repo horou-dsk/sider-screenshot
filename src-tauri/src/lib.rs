@@ -1,20 +1,13 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
-use enum_windows::WindowInfo;
 use serde::Serialize;
-use sider::LocalServe;
+use sider::{capture::screen_capture, LocalServe};
 use tauri::Manager;
-use windows::{set_visible_window, set_window_size, set_window_style};
+use windows::{set_visible_window, set_window_style};
 
 mod enum_windows;
 mod sider;
 mod windows;
-
-#[tauri::command]
-fn get_foreground_window_info(app: tauri::AppHandle) -> Vec<WindowInfo> {
-    let window = app.get_webview_window("screenshot").unwrap();
-    enum_windows::get_foreground_window_info(window.hwnd().unwrap())
-}
 
 #[derive(Debug, Serialize)]
 struct MonitorInfo {
@@ -29,39 +22,14 @@ struct MonitorInfo {
 }
 
 #[tauri::command]
-fn get_display_info() -> Vec<MonitorInfo> {
-    let displays = display_info::DisplayInfo::all().unwrap();
-    displays
-        .into_iter()
-        .map(|info| MonitorInfo {
-            x: info.x,
-            y: info.y,
-            width: info.width,
-            height: info.height,
-            is_primary: info.is_primary,
-            scale_factor: info.scale_factor,
-            id: info.id,
-            name: info.name,
-        })
-        .collect()
-}
-
-#[tauri::command]
-fn mutiple_monitor_fullscreen(
-    app: tauri::AppHandle,
-    window_label: String,
-    width: i32,
-    height: i32,
-    x: i32,
-    y: i32,
-) {
-    let window = app.get_webview_window(&window_label).unwrap();
-    set_window_size(window.hwnd().unwrap(), x, y, width, height).expect("设置窗口大小失败");
-}
-
-#[tauri::command]
 fn hide_window(window: tauri::Window) -> tauri::Result<()> {
     set_visible_window(window.hwnd()?).expect("设置窗口可见失败");
+    Ok(())
+}
+
+#[tauri::command]
+async fn capture_screen(screenshot_window: tauri::WebviewWindow) -> tauri::Result<()> {
+    screen_capture(&screenshot_window).await.unwrap();
     Ok(())
 }
 
@@ -92,12 +60,7 @@ fn hide_window(window: tauri::Window) -> tauri::Result<()> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![
-            get_foreground_window_info,
-            get_display_info,
-            mutiple_monitor_fullscreen,
-            hide_window,
-        ])
+        .invoke_handler(tauri::generate_handler![hide_window, capture_screen])
         .setup(|app| {
             app.handle()
                 .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;

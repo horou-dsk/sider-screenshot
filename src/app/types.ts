@@ -21,4 +21,6 @@ export type WindowInfo = {
 export type ShotShowWindowPayload = {
   window_info: WindowInfo[];
   monitor_info: MonitorInfo[];
+  min_x: number;
+  min_y: number;
 };

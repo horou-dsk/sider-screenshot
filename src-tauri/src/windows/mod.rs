@@ -1,9 +1,9 @@
 use windows::Win32::{
     Foundation::HWND,
     UI::WindowsAndMessaging::{
-        SetWindowLongW, SetWindowPos, ShowWindow, GWL_EXSTYLE, GWL_STYLE, HWND_TOP, SWP_SHOWWINDOW,
-        SW_HIDE, SW_SHOW, WS_CLIPSIBLINGS, WS_EX_LEFT, WS_EX_LTRREADING, WS_EX_RIGHTSCROLLBAR,
-        WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED,
+        SetForegroundWindow, SetWindowLongW, SetWindowPos, ShowWindow, GWL_EXSTYLE, GWL_STYLE,
+        HWND_TOP, SWP_SHOWWINDOW, SW_HIDE, SW_SHOW, WS_CLIPSIBLINGS, WS_EX_LEFT, WS_EX_LTRREADING,
+        WS_EX_RIGHTSCROLLBAR, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_OVERLAPPED,
     },
 };
 
@@ -33,8 +33,13 @@ pub fn set_window_size(
 ) -> windows::core::Result<()> {
     unsafe {
         // 移动窗口到全屏
+        let now = std::time::Instant::now();
         SetWindowPos(hwnd, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW)?;
+
         let _ = ShowWindow(hwnd, SW_SHOW);
+        let _ = SetForegroundWindow(hwnd);
+
+        println!("设置窗口大小耗时: {}ms", now.elapsed().as_millis());
         // 添加分层窗口样式
         // let style = GetWindowLongW(hwnd, GWL_STYLE);
         // SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED.0 as i32);

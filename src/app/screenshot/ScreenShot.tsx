@@ -40,7 +40,9 @@ const DOWN = {
 function ScreenShot() {
   const [imageLoadedIndex, setImageLoadedIndex] = createSignal(0);
   const [down, setDown] = createSignal(DOWN);
-  const [cropMoveing, setCropMoveing] = createSignal(false);
+  const cropMoveing = createMemo(
+    () => down().selection || down().move || down().drag
+  );
   let border_width = 2;
   const [cropRect, setCropRect] = createSignal({
     x: 0,
@@ -152,10 +154,8 @@ function ScreenShot() {
     const _down = down();
     if (_down.selection) {
       handleCropSelection(event.clientX, event.clientY);
-      setCropMoveing(true);
     } else if (_down.move) {
       handleCropMove(event.clientX, event.clientY);
-      setCropMoveing(true);
     } else if (_down.drag) {
       switch (_down.dragDirection) {
         case DragDirection.NW:
@@ -173,7 +173,6 @@ function ScreenShot() {
           handleCropSelection(event.clientX, _down.start.y + cropRect().height);
           break;
       }
-      setCropMoveing(true);
     } else if (!_down.selected) {
       handleSelectWindow(event.clientX, event.clientY);
     }
@@ -192,7 +191,6 @@ function ScreenShot() {
       .listen("show-window", (event) => {
         const payload = event.payload as ShotShowWindowPayload;
         const info = payload.window_info;
-        // console.log(info);
         setScreenShots(
           payload.monitor_info.map((v) => ({
             monitorInfo: v,
@@ -213,11 +211,10 @@ function ScreenShot() {
         );
         cursorPosition().then((position) => {
           handleSelectWindow(
-            position.x / window.devicePixelRatio,
-            position.y / window.devicePixelRatio
+            (position.x - payload.min_x) / window.devicePixelRatio,
+            (position.y - payload.min_y) / window.devicePixelRatio
           );
         });
-        win.setFocus();
       })
       .then((_unlisten) => {
         if (!unMount) {
@@ -233,9 +230,11 @@ function ScreenShot() {
     };
     window.addEventListener("keyup", handleKeyUp);
     register("CommandOrControl+Alt+A", (event) => {
-      console.log("CommandOrControl+Alt+A");
       if (event.state === "Pressed") {
-        screen_capture();
+        const now = Date.now();
+        screen_capture().then(() => {
+          console.log(Date.now() - now);
+        });
       }
     });
     onCleanup(() => {
@@ -279,7 +278,7 @@ function ScreenShot() {
         <div
           class="fixed top-0 left-0 w-full h-full"
           classList={{
-            "bg-black/30": imageLoaded(),
+            "bg-black/35": imageLoaded(),
           }}
           onMouseDown={(event) => {
             setDown({
@@ -290,7 +289,6 @@ function ScreenShot() {
           }}
           onMouseUp={() => {
             setDown({ ...DOWN, selection: false, selected: true });
-            setCropMoveing(false);
           }}
         >
           <div
@@ -321,7 +319,6 @@ function ScreenShot() {
                   move: false,
                   drag: false,
                 });
-                setCropMoveing(false);
               }
             }}
           >
