@@ -1,5 +1,7 @@
 pnpm build
 Push-Location .\src-tauri
+$fileContent = Get-Content -Path "tauri.conf.prod.json" -Raw
+$env:TAURI_CONFIG = $fileContent
 cargo build --release
 Pop-Location
 

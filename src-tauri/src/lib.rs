@@ -28,8 +28,9 @@ fn hide_window(window: tauri::Window) -> tauri::Result<()> {
 }
 
 #[tauri::command]
-async fn capture_screen(screenshot_window: tauri::WebviewWindow) -> tauri::Result<()> {
-    screen_capture(&screenshot_window).await.unwrap();
+async fn capture_screen(app: tauri::AppHandle) -> tauri::Result<()> {
+    let screenshot_window = app.get_webview_window("screenshot").unwrap();
+    screen_capture(&screenshot_window).await?;
     Ok(())
 }
 

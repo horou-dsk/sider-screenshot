@@ -46,9 +46,9 @@ impl sider_local_ai::sider::client::screen_capture_service_server::ScreenCapture
 }
 
 pub async fn screen_capture(screenshot_window: &WebviewWindow) -> anyhow::Result<()> {
-    let hwnd = screenshot_window.hwnd().unwrap();
+    let hwnd = screenshot_window.hwnd()?;
     let window_info = enum_windows::get_foreground_window_info(hwnd);
-    let monitor_info = display_info::DisplayInfo::all().unwrap();
+    let monitor_info = display_info::DisplayInfo::all()?;
     let (min_x, min_y, right_width, bottom_height) = monitor_info.iter().fold(
         (0, 0, 0, 0),
         |(min_x, min_y, right_width, bottom_height), info| {

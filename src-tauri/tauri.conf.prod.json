@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.sider-tauri.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:8088",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "sider-screenshot",
+        "label": "screenshot",
+        "url": "/sider/screenshot",
+        "visible": false,
+        "skipTaskbar": true,
+        "transparent": true,
+        "alwaysOnTop": true
+      }
+    ]
+  }
+}
