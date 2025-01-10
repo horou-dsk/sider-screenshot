@@ -4,19 +4,19 @@ use image::{DynamicImage, GenericImageView};
 
 pub fn gen_from_img(img: &DynamicImage) -> Vec<u8> {
     //Flipping image, because scan lines are stored bottom to top
-    let img = img.flipv();
+    // let img = img.flipv();
 
     //Getting the header
-    let mut byte_vec = get_header(img.width(), img.height());
+    let mut byte_vec = Vec::with_capacity((img.width() * img.height() * 4) as usize); // get_header(img.width(), img.height());
 
     for (_, _, pixel) in img.pixels() {
         //Setting the pixels, one by one
 
         let pixel_bytes = pixel.0;
         //One pixel is 4 bytes, BGR and unused
-        byte_vec.push(pixel_bytes[2]);
-        byte_vec.push(pixel_bytes[1]);
         byte_vec.push(pixel_bytes[0]);
+        byte_vec.push(pixel_bytes[1]);
+        byte_vec.push(pixel_bytes[2]);
         byte_vec.push(pixel_bytes[3]); //This is unused based on the specifications
     }
 

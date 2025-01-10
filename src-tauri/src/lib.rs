@@ -1,7 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 use serde::Serialize;
-use sider::{capture::screen_capture, LocalServe};
+use sider::{capture::screen_capture, send_capture, LocalServe};
 use tauri::Manager;
 use windows::{set_visible_window, set_window_style};
 
@@ -61,13 +61,17 @@ async fn capture_screen(app: tauri::AppHandle) -> tauri::Result<()> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![hide_window, capture_screen])
+        .invoke_handler(tauri::generate_handler![
+            hide_window,
+            capture_screen,
+            send_capture
+        ])
         .setup(|app| {
             app.handle()
                 .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
-            LocalServe { screenshot_window }.local_serve_run();
+            app.manage(LocalServe {}.local_serve_run(screenshot_window));
             Ok(())
         })
         .run(tauri::generate_context!())

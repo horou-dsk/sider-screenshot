@@ -344,22 +344,22 @@ function ScreenShot() {
                 <ScreenShotToolbar
                   onClose={hide}
                   onSave={() => {
-                    screenShotCanvas
-                      .capture()
-                      .then((data) => {
-                        return navigator.clipboard.write([
-                          new ClipboardItem({ "image/png": data.bytes }),
-                        ]);
-                        // return invoke("image_to_clipboard", {
-                        //   image: data.bytes,
-                        //   width: data.width,
-                        //   height: data.height,
-                        // });
-                      })
-                      .then(() => {
-                        console.log("保存成功");
-                        hide();
+                    async function save() {
+                      const data = await screenShotCanvas.capture();
+                      data.bytes.arrayBuffer().then((bytes) => {
+                        invoke("send_capture", {
+                          image: new Uint8Array(bytes),
+                        }).catch((err) => {
+                          console.error(err);
+                        });
                       });
+                      // await navigator.clipboard.write([
+                      //   new ClipboardItem({ "image/png": data.bytes }),
+                      // ]);
+                      console.log("保存成功");
+                    }
+                    save();
+                    hide();
                   }}
                 />
               </div>
