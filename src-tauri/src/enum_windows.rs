@@ -74,33 +74,22 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
                     return true;
                 }
                 // 如果为负数，则为零
-                let left = if rect.left < min_x {
-                    0
-                } else {
-                    rect.left - min_x
-                };
-                let top = if rect.top < min_y {
-                    0
-                } else {
-                    rect.top - min_y
-                };
-                let right = if rect.right > max_width {
-                    max_width
-                } else {
-                    rect.right
-                };
-                let bottom = if rect.bottom > max_height {
-                    max_height
-                } else {
-                    rect.bottom
-                };
+                let left = rect.left.saturating_sub(min_x);
+                let top = rect.top.saturating_sub(min_y);
+                let right = rect.right.min(max_width);
+                let bottom = rect.bottom.min(max_height);
+                let width = (right - min_x) - left;
+                let height = (bottom - min_y) - top;
+                if width < 25 || height < 25 {
+                    return true;
+                }
                 windows_info.push(WindowInfo {
                     hwnd: format!("{:?}", hwnd),
                     title: title_str,
                     x: left,
                     y: top,
-                    width: (right - min_x) - left,
-                    height: (bottom - min_y) - top,
+                    width,
+                    height,
                 });
             }
         }

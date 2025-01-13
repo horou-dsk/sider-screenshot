@@ -358,8 +358,8 @@ function ScreenShot() {
                       // ]);
                       console.log("保存成功");
                     }
-                    save();
                     hide();
+                    save();
                   }}
                 />
               </div>

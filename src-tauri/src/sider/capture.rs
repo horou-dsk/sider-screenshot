@@ -1,7 +1,7 @@
 use serde_json::json;
 use sider_local_ai::{
     reqwest,
-    sider::client::Empty,
+    sider::client::GrpcEmptyMessage as Empty,
     tonic::{self, Request, Response},
     tracing::error,
 };
@@ -24,10 +24,13 @@ impl CaptureService {
 }
 
 #[tonic::async_trait]
-impl sider_local_ai::sider::client::screen_capture_service_server::ScreenCaptureService
+impl sider_local_ai::sider::client::screen_capture_action_server::ScreenCaptureAction
     for CaptureService
 {
-    async fn capture(&self, _request: Request<Empty>) -> Result<Response<Empty>, tonic::Status> {
+    async fn will_capture(
+        &self,
+        _request: Request<Empty>,
+    ) -> Result<Response<Empty>, tonic::Status> {
         if let Err(err) = self
             .client
             .get("http://localhost:8088/sys/screenshot/capture")
@@ -40,7 +43,7 @@ impl sider_local_ai::sider::client::screen_capture_service_server::ScreenCapture
         Ok(Response::new(Empty::default()))
     }
 
-    async fn ping(&self, _: Request<Empty>) -> Result<Response<Empty>, tonic::Status> {
+    async fn ping_toolkit(&self, _: Request<Empty>) -> Result<Response<Empty>, tonic::Status> {
         Ok(Response::new(Empty::default()))
     }
 }
