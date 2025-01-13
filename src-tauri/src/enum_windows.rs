@@ -80,7 +80,7 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
                 let bottom = rect.bottom.min(max_height);
                 let width = (right - min_x) - left;
                 let height = (bottom - min_y) - top;
-                if width < 25 || height < 25 {
+                if width < 25 || height < 25 || height > max_height || width > max_width {
                     return true;
                 }
                 windows_info.push(WindowInfo {
