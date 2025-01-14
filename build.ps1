@@ -3,6 +3,7 @@ Push-Location .\src-tauri
 $fileContent = Get-Content -Path "tauri.conf.prod.json" -Raw
 $env:TAURI_CONFIG = $fileContent
 cargo build --release
+$env:TAURI_CONFIG = $null
 Pop-Location
 
 Push-Location .\src-tauri\target\release

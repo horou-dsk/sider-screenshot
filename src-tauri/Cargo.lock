@@ -4599,6 +4599,7 @@ dependencies = [
  "axum 0.8.1",
  "bytes",
  "chrono",
+ "crossbeam",
  "display-info",
  "futures-util",
  "image",
@@ -4628,6 +4629,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "arboard",
+ "base64 0.22.1",
  "clipboard-rs",
  "clipboard-win",
  "display-info",

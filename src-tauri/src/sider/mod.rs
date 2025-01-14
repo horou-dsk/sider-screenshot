@@ -1,4 +1,5 @@
 use arboard::{Clipboard, ImageData};
+use base64::{engine::general_purpose, Engine as _};
 use capture::CaptureService;
 use sider_local_ai::{
     config::CHROME_RPC_DST,
@@ -45,7 +46,9 @@ impl LocalServe {
 
     pub async fn send_capture(&self, image: Vec<u8>) -> anyhow::Result<()> {
         let mut client = NotifyCaptureClient::connect(CHROME_RPC_DST).await?;
-        let request = tonic::Request::new(CaptureResultRequest { data: image });
+        let request = tonic::Request::new(CaptureResultRequest {
+            data: general_purpose::STANDARD.encode(image),
+        });
         client.did_capture(request).await?;
         Ok(())
     }
