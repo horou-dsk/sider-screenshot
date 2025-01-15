@@ -1,4 +1,3 @@
-use arboard::{Clipboard, ImageData};
 use base64::{engine::general_purpose, Engine as _};
 use capture::CaptureService;
 use sider_local_ai::{
@@ -9,8 +8,6 @@ use sider_local_ai::{
 };
 use tauri::{Manager as _, WebviewWindow};
 
-use crate::windows::image_clipboard::gen_from_img;
-
 pub mod capture;
 
 #[derive(Clone)]
@@ -19,16 +16,14 @@ pub struct LocalServe {}
 impl LocalServe {
     pub fn local_serve_run(self, screenshot_window: WebviewWindow) -> Self {
         let this = self.clone();
-        if !cfg!(debug_assertions) {
-            std::thread::spawn(move || {
-                tokio::runtime::Builder::new_multi_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap()
-                    .block_on(this.run(screenshot_window))
-                    .expect("local serve run error");
-            });
-        }
+        std::thread::spawn(move || {
+            tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap()
+                .block_on(this.run(screenshot_window))
+                .expect("local serve run error");
+        });
         self
     }
 
@@ -40,7 +35,17 @@ impl LocalServe {
                 error!("rpc service run error: {}", err);
             }
         });
-        sider_local_ai::run().await?;
+        let serve = sider_local_ai::LocalAppServe::new(sider_local_ai::config::Config {
+            port: 8088,
+            host: "127.0.0.1".to_string(),
+            level: "info".to_string(),
+        });
+
+        if !cfg!(debug_assertions) {
+            serve.run().await?;
+        } else {
+            tokio::time::sleep(std::time::Duration::from_secs(10000)).await;
+        }
         Ok(())
     }
 
@@ -58,18 +63,12 @@ impl LocalServe {
 pub async fn send_capture(app: tauri::AppHandle, image: Vec<u8>) -> tauri::Result<()> {
     let d_image = image::load_from_memory_with_format(&image, image::ImageFormat::Png)
         .map_err(|err| tauri::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, err)))?;
-    let img = gen_from_img(&d_image);
 
     std::thread::spawn(move || {
-        if let Ok(mut clip) = Clipboard::new() {
-            let mut index = 0;
-            while index < 3 {
+        if let Ok(clip) = clipboard_rs::ClipboardContext::new() {
+            for _ in 0..3 {
                 let now = std::time::Instant::now();
-                match clip.set_image(ImageData {
-                    width: d_image.width() as usize,
-                    height: d_image.height() as usize,
-                    bytes: img.clone().into(),
-                }) {
+                match clip.set_png_image(&d_image) {
                     Ok(_) => {
                         info!("set image to clipboard cost time: {:?}", now.elapsed());
                         break;
@@ -78,7 +77,6 @@ pub async fn send_capture(app: tauri::AppHandle, image: Vec<u8>) -> tauri::Resul
                         error!("set image to clipboard error: {}", err);
                     }
                 }
-                index += 1;
             }
         }
     });
