@@ -1,7 +1,9 @@
 use serde::Serialize;
+use sider_local_ai::tracing::info;
 use windows::Win32::Foundation::{BOOL, HWND, LPARAM, RECT};
 use windows::Win32::UI::WindowsAndMessaging::{
-    EnumChildWindows, EnumWindows, GetWindowRect, GetWindowTextW, IsWindowVisible,
+    EnumChildWindows, EnumWindows, GetClassNameW, GetWindowRect, GetWindowTextW, IsIconic,
+    IsWindowVisible,
 };
 
 struct Callback<'a>(HWND, &'a mut dyn FnMut(HWND) -> bool);
@@ -48,7 +50,7 @@ pub struct WindowInfo {
 }
 
 pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
-    println!("skip_hwnd: {:?}", skip_hwnd);
+    info!("skip_hwnd: {:?}", skip_hwnd);
     let displays = display_info::DisplayInfo::all().unwrap();
     let max_width = displays.iter().map(|info| info.width).max().unwrap() as i32;
     let max_height = displays.iter().map(|info| info.height).max().unwrap() as i32;
@@ -59,39 +61,36 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
 
     // 定义枚举回调
     let mut callback = |hwnd: HWND| -> bool {
-        // 检查窗口是否可见
-        if unsafe { IsWindowVisible(hwnd).as_bool() } {
-            // 获取窗口标题
-            let mut title = vec![0u16; 256];
-            let len = unsafe { GetWindowTextW(hwnd, &mut title) as usize };
-            title.truncate(len);
+        // 获取窗口标题
+        let mut title = vec![0u16; 256];
+        let len = unsafe { GetWindowTextW(hwnd, &mut title) as usize };
+        title.truncate(len);
 
-            // 获取窗口位置和大小
-            let mut rect = RECT::default();
-            if unsafe { GetWindowRect(hwnd, &mut rect).is_ok() } {
-                let title_str = String::from_utf16_lossy(&title);
-                if rect.left < -max_width || rect.top < -max_width {
-                    return true;
-                }
-                // 如果为负数，则为零
-                let left = rect.left.saturating_sub(min_x);
-                let top = rect.top.saturating_sub(min_y);
-                let right = rect.right.min(max_width);
-                let bottom = rect.bottom.min(max_height);
-                let width = (right - min_x) - left;
-                let height = (bottom - min_y) - top;
-                if width < 25 || height < 25 || height > max_height || width > max_width {
-                    return true;
-                }
-                windows_info.push(WindowInfo {
-                    hwnd: format!("{:?}", hwnd),
-                    title: title_str,
-                    x: left,
-                    y: top,
-                    width,
-                    height,
-                });
+        // 获取窗口位置和大小
+        let mut rect = RECT::default();
+        if unsafe { GetWindowRect(hwnd, &mut rect).is_ok() } {
+            let title_str = String::from_utf16_lossy(&title);
+            if rect.left < -max_width || rect.top < -max_width {
+                return true;
             }
+            // 如果为负数，则为零
+            let left = rect.left.saturating_sub(min_x);
+            let top = rect.top.saturating_sub(min_y);
+            let right = rect.right.min(max_width);
+            let bottom = rect.bottom.min(max_height);
+            let width = (right - min_x) - left;
+            let height = (bottom - min_y) - top;
+            if width < 25 || height < 25 || height > max_height || width > max_width {
+                return true;
+            }
+            windows_info.push(WindowInfo {
+                hwnd: format!("{:?}", hwnd),
+                title: title_str,
+                x: left,
+                y: top,
+                width,
+                height,
+            });
         }
         true // 返回 true 继续枚举
     };
@@ -105,7 +104,7 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
         );
     }
 
-    println!("EnumWindows");
+    info!("EnumWindows");
 
     // 打印所有窗口信息
     // for window_info in &windows_info {
@@ -120,16 +119,16 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
 // EnumWindows 的回调函数
 unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     let callback = unsafe { &mut *(lparam.0 as *mut Callback) };
-    if hwnd != callback.0 {
-        let _ = EnumChildWindows(hwnd, Some(enum_child_windows_callback), lparam);
+    let mut class_name = [0u16; 256];
+    let len = GetClassNameW(hwnd, &mut class_name);
+    // 过滤不可见窗口和跳过窗口
+    if hwnd != callback.0
+        && unsafe { IsWindowVisible(hwnd).as_bool() && !IsIconic(hwnd).as_bool() }
+        && String::from_utf16_lossy(&class_name[..len as usize]) != "Windows.UI.Core.CoreWindow"
+    {
+        let _ = EnumChildWindows(hwnd, Some(enum_windows_callback), lparam);
         BOOL::from(callback.1(hwnd))
     } else {
         BOOL::from(true)
     }
-}
-
-unsafe extern "system" fn enum_child_windows_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
-    let _ = EnumChildWindows(hwnd, Some(enum_child_windows_callback), lparam);
-    let callback = unsafe { &mut *(lparam.0 as *mut Callback) };
-    BOOL::from(callback.1(hwnd))
 }

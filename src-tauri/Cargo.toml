@@ -26,7 +26,7 @@ serde_json = "1"
 sider-local-ai = { path = "C:/Users/xly_t/Krysha/Code/Projects/Sider/sider-local-ai" }
 display-info = "0.5.2"
 clipboard-win = "5.4.0"
-clipboard-rs = { git = "https://github.com/horou-dsk/clipboard-rs.git", branch = "fix/win_image" }
+# clipboard-rs = { git = "https://github.com/horou-dsk/clipboard-rs.git", branch = "fix/win_image" }
 image = "0.25"
 anyhow = "1"
 base64 = "0.22"

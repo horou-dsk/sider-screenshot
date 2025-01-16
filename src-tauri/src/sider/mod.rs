@@ -8,6 +8,8 @@ use sider_local_ai::{
 };
 use tauri::{Manager as _, WebviewWindow};
 
+use crate::windows::image_clipboard;
+
 pub mod capture;
 
 #[derive(Clone)]
@@ -65,17 +67,15 @@ pub async fn send_capture(app: tauri::AppHandle, image: Vec<u8>) -> tauri::Resul
         .map_err(|err| tauri::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, err)))?;
 
     std::thread::spawn(move || {
-        if let Ok(clip) = clipboard_rs::ClipboardContext::new() {
-            for _ in 0..3 {
-                let now = std::time::Instant::now();
-                match clip.set_png_image(&d_image) {
-                    Ok(_) => {
-                        info!("set image to clipboard cost time: {:?}", now.elapsed());
-                        break;
-                    }
-                    Err(err) => {
-                        error!("set image to clipboard error: {}", err);
-                    }
+        for _ in 0..3 {
+            let now = std::time::Instant::now();
+            match image_clipboard::set_png_image(&d_image) {
+                Ok(_) => {
+                    info!("set image to clipboard cost time: {:?}", now.elapsed());
+                    break;
+                }
+                Err(err) => {
+                    error!("set image to clipboard error: {}", err);
                 }
             }
         }
