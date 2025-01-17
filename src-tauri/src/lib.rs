@@ -5,7 +5,7 @@ use sider::{capture::screen_capture, send_capture, LocalServe};
 use tauri::Manager;
 use windows::{set_visible_window, set_window_style};
 
-mod enum_windows;
+pub mod enum_windows;
 mod sider;
 mod windows;
 

@@ -6,7 +6,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     IsWindowVisible,
 };
 
-struct Callback<'a>(HWND, &'a mut dyn FnMut(HWND) -> bool);
+struct Callback<'a>(HWND, &'a mut dyn FnMut(HWND) -> bool, [u16; 256]);
 
 // fn is_filter_window(hwnd: HWND) -> bool {
 //     unsafe {
@@ -96,7 +96,7 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
     };
     // 枚举所有窗口
     unsafe {
-        let mut callback = Callback(skip_hwnd, &mut callback);
+        let mut callback = Callback(skip_hwnd, &mut callback, [0u16; 256]);
         // println!("callback_ptr: {:?}", callback_ptr);
         let _ = EnumWindows(
             Some(enum_windows_callback),
@@ -119,8 +119,8 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
 // EnumWindows 的回调函数
 unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     let callback = unsafe { &mut *(lparam.0 as *mut Callback) };
-    let mut class_name = [0u16; 256];
-    let len = GetClassNameW(hwnd, &mut class_name);
+    let class_name = &mut callback.2;
+    let len = GetClassNameW(hwnd, class_name);
     // 过滤不可见窗口和跳过窗口
     if hwnd != callback.0
         && unsafe { IsWindowVisible(hwnd).as_bool() && !IsIconic(hwnd).as_bool() }
