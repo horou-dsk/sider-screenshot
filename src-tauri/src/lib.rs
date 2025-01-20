@@ -2,10 +2,12 @@
 
 use serde::Serialize;
 use sider::{capture::screen_capture, send_capture, LocalServe};
+use sider_local_ai::tracing::error;
 use tauri::Manager;
 use windows::{set_visible_window, set_window_style};
 
 pub mod enum_windows;
+mod quick_search;
 mod sider;
 mod windows;
 
@@ -72,6 +74,9 @@ pub fn run() {
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
             app.manage(LocalServe {}.local_serve_run(screenshot_window));
+            if let Err(err) = quick_search::init_window(app) {
+                error!("init quick search window error: {}", err);
+            }
             Ok(())
         })
         .run(tauri::generate_context!())

@@ -4774,6 +4774,7 @@ dependencies = [
  "display-info",
  "futures-util",
  "image",
+ "input-listen",
  "marking-words",
  "prost",
  "rayon",

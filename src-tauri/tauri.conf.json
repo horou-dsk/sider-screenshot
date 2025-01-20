@@ -29,13 +29,12 @@
         "alwaysOnTop": true
       },
       {
-        "title": "quick-start",
-        "label": "quick-start",
+        "title": "quick-search",
+        "label": "quick-search",
         "url": "/sider/quick-start",
         "visible": true,
         "width": 800,
-        "height": 100,
-        "center": true,
+        "height": 60,
         "decorations": false,
         "resizable": false
       }
