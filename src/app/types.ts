@@ -24,3 +24,9 @@ export type ShotShowWindowPayload = {
   min_x: number;
   min_y: number;
 };
+
+export type QuickSearchApp = {
+  path: string;
+  name: string;
+  icon: string;
+};

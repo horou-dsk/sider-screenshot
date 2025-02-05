@@ -229,7 +229,7 @@ function ScreenShot() {
       }
     };
     window.addEventListener("keyup", handleKeyUp);
-    register("CommandOrControl+Alt+A", (event) => {
+    register("CommandOrControl+Alt+D", (event) => {
       if (event.state === "Pressed") {
         screen_capture();
       }
@@ -238,7 +238,7 @@ function ScreenShot() {
       unMount = true;
       unlisten?.();
       window.removeEventListener("keyup", handleKeyUp);
-      unregister("CommandOrControl+Alt+A");
+      unregister("CommandOrControl+Alt+D");
     });
   });
   return (
