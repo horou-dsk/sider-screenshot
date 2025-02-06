@@ -28,5 +28,6 @@ export type ShotShowWindowPayload = {
 export type QuickSearchApp = {
   path: string;
   name: string;
-  icon: string;
+  ty: string;
+  id: string;
 };

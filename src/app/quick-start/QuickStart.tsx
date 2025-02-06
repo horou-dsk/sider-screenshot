@@ -148,10 +148,13 @@ function QuickStart() {
           <div class="flex flex-wrap my-2">
             <For each={searchApps()}>
               {(item) => (
-                <div class="w-[80px] h-[84px] rounded-md hover:bg-[rgb(87,87,87)] flex flex-col items-center py-2 px-1 cursor-pointer">
+                <div class="w-[80px] h-[88px] rounded-md hover:bg-[rgb(87,87,87)] flex flex-col items-center py-2 px-1 cursor-pointer">
                   <img
                     class="object-contain w-8 h-8"
-                    src={"data:image/png;base64," + item.icon}
+                    src={
+                      "http://localhost:8088/sys/quick_search/app_icon/" +
+                      item.id
+                    }
                     alt=""
                   />
                   <div class="text-xs pt-2 break-all text-center text-ellipsis line-clamp-2">
