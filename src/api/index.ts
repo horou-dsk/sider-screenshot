@@ -3,3 +3,9 @@ export function fetchApps() {
     method: "GET",
   }).then((res) => res.json());
 }
+
+export function runApp(id: string) {
+  return fetch("http://localhost:8088/sys/quick_search/run_app/" + id, {
+    method: "GET",
+  }).then((res) => res.json());
+}

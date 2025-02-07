@@ -9,22 +9,23 @@ import {
   Show,
 } from "solid-js";
 import { QuickSearchApp } from "../types";
-import { fetchApps } from "../../api";
+import { fetchApps, runApp } from "../../api";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
-import pinyin from "pinyin";
 
 import "./quick-start.css";
+import { filterMatchs } from "./match";
+import QsMatchText from "./QsMatchText";
 
 function QuickStart() {
   const [searchText, setSearchText] = createSignal("");
   const [apps, { refetch }] = createResource<{ data: QuickSearchApp[] }>(
     fetchApps
   );
-  createEffect(() => {
-    apps()?.data.forEach((app) => {
-      console.log("pinyin", pinyin(app.name, { style: "normal" }));
-    });
-  });
+  // createEffect(() => {
+  //   apps()?.data.forEach((app) => {
+  //     console.log("pinyin", pinyin(app.name, { style: "normal" }));
+  //   });
+  // });
   // const fuse = createMemo(
   //   () => new Fuse(apps()?.data || [], { keys: ["name"] })
   // );
@@ -34,79 +35,9 @@ function QuickStart() {
   const searchApps = createMemo(() => {
     const data = apps()?.data || [];
     const text = searchText().toLowerCase();
-    const abbrs = text.split("");
-    if (!text) {
-      return [];
-    }
-    const matchs = [];
-    const now = Date.now();
-    for (let d of data) {
-      const name = d.name.toLowerCase();
-      if (name.includes(text)) {
-        matchs.push(d);
-        continue;
-      }
-      const nameWords = name.split(" ");
-      if (nameWords.join("").includes(text)) {
-        matchs.push(d);
-        continue;
-      }
-      let match = abbrs.every((abbr, index) => {
-        const word = nameWords[index];
-        return word && word.startsWith(abbr);
-      });
-      if (match) {
-        matchs.push(d);
-        continue;
-      }
-      if (!/[^\x00-\x7F]/.test(name)) {
-        continue;
-      }
-      const pinyinArr = pinyin(name, { style: "normal" });
-      let matchIndex = 0;
-      for (let i = 0; i < pinyinArr.length; i++) {
-        const word = pinyinArr[i];
-        const abbr = abbrs[matchIndex];
-        if (!abbr) {
-          break;
-        }
-        if (word[0].startsWith(abbr)) {
-          match = true;
-          matchIndex++;
-          if (i === pinyinArr.length - 1 && matchIndex < abbrs.length) {
-            match = false;
-          }
-        } else {
-          match = false;
-        }
-      }
-      if (match) {
-        matchs.push(d);
-        continue;
-      }
-      matchIndex = 0;
-      for (let p of pinyinArr) {
-        const sw = text.substring(matchIndex);
-        if (!sw) {
-          break;
-        }
-        if (sw.startsWith(p[0]) || p[0].startsWith(sw)) {
-          matchIndex += p[0].length;
-          match = true;
-        } else {
-          match = false;
-        }
-      }
-      if (matchIndex < text.length) {
-        match = false;
-      }
-      if (match) {
-        matchs.push(d);
-        continue;
-      }
-    }
-    console.log("耗时：", Date.now() - now);
-    return matchs;
+    return filterMatchs(data, text).sort(
+      (a, b) => a.matchIndex[0].start - b.matchIndex[0].start
+    );
   });
 
   let currentWindow = getCurrentWindow();
@@ -128,6 +59,10 @@ function QuickStart() {
     }
   });
 
+  createEffect(() => {
+    console.log(searchApps());
+  });
+
   return (
     <div
       class="w-screen bg-slate-100 dark:bg-[#2f2f2f] overflow-hidden"
@@ -147,8 +82,14 @@ function QuickStart() {
           <h4>最佳搜索结果</h4>
           <div class="flex flex-wrap my-2">
             <For each={searchApps()}>
-              {(item) => (
-                <div class="w-[80px] h-[88px] rounded-md hover:bg-[rgb(87,87,87)] flex flex-col items-center py-2 px-1 cursor-pointer">
+              {({ item, matchIndex }) => (
+                <div
+                  onClick={() => {
+                    runApp(item.id);
+                    setSearchText("");
+                  }}
+                  class="w-[80px] h-[88px] rounded-md hover:bg-[rgb(87,87,87)] flex flex-col items-center py-2 px-1 cursor-pointer"
+                >
                   <img
                     class="object-contain w-8 h-8"
                     src={
@@ -158,7 +99,7 @@ function QuickStart() {
                     alt=""
                   />
                   <div class="text-xs pt-2 break-all text-center text-ellipsis line-clamp-2">
-                    {item.name}
+                    <QsMatchText name={item.name} matchIndex={matchIndex} />
                   </div>
                 </div>
               )}
