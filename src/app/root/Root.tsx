@@ -115,7 +115,7 @@ function Root() {
                   _text,
                   8
                 );
-                chat("qwen2.5:14b", [
+                chat("deepseek-r1:14b", [
                   { role: "system", content: prompt(data.join("\n")) },
                   { content: _text, role: "user" },
                 ]).then(async (reader) => {

@@ -6,6 +6,7 @@ use sider_local_ai::tracing::error;
 use tauri::Manager;
 use windows::{set_visible_window, set_window_style};
 
+mod contant;
 pub mod enum_windows;
 mod quick_search;
 mod sider;

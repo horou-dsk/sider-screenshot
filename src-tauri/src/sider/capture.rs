@@ -7,7 +7,7 @@ use sider_local_ai::{
 };
 use tauri::{Emitter, WebviewWindow};
 
-use crate::{enum_windows, windows::set_window_size, MonitorInfo};
+use crate::{enum_windows, local_url, windows::set_window_size, MonitorInfo};
 
 pub struct CaptureService {
     screenshot_window: WebviewWindow,
@@ -33,7 +33,7 @@ impl sider_local_ai::sider::client::screen_capture_action_server::ScreenCaptureA
     ) -> Result<Response<Empty>, tonic::Status> {
         if let Err(err) = self
             .client
-            .get("http://localhost:8088/sys/screenshot/capture")
+            .get(local_url!("/sys/screenshot/capture"))
             .send()
             .await
         {
@@ -51,15 +51,15 @@ impl sider_local_ai::sider::client::screen_capture_action_server::ScreenCaptureA
 pub async fn screen_capture(screenshot_window: &WebviewWindow) -> anyhow::Result<()> {
     let hwnd = screenshot_window.hwnd()?;
     let window_info = enum_windows::get_foreground_window_info(hwnd);
-    let monitor_info = display_info::DisplayInfo::all()?;
+    let monitor_info = xcap::Monitor::all()?;
     let (min_x, min_y, right_width, bottom_height) = monitor_info.iter().fold(
         (0, 0, 0, 0),
         |(min_x, min_y, right_width, bottom_height), info| {
             (
-                min_x.min(info.x),
-                min_y.min(info.y),
-                right_width.max(info.x + info.width as i32),
-                bottom_height.max(info.y + info.height as i32),
+                min_x.min(info.x()),
+                min_y.min(info.y()),
+                right_width.max(info.x() + info.width() as i32),
+                bottom_height.max(info.y() + info.height() as i32),
             )
         },
     );
@@ -71,14 +71,14 @@ pub async fn screen_capture(screenshot_window: &WebviewWindow) -> anyhow::Result
     let monitor_info: Vec<MonitorInfo> = monitor_info
         .into_iter()
         .map(|info| MonitorInfo {
-            x: info.x - min_x,
-            y: info.y - min_y,
-            width: info.width,
-            height: info.height,
-            is_primary: info.is_primary,
-            scale_factor: info.scale_factor,
-            id: info.id,
-            name: info.name,
+            x: info.x() - min_x,
+            y: info.y() - min_y,
+            width: info.width(),
+            height: info.height(),
+            is_primary: info.is_primary(),
+            scale_factor: info.scale_factor(),
+            id: info.id(),
+            name: info.name().to_string(),
         })
         .collect();
     if let Err(err) = screenshot_window.emit(
