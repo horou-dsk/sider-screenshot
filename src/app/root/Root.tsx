@@ -1,7 +1,8 @@
-import { createSignal, For } from "solid-js";
+import { createSignal, For, Match, Switch } from "solid-js";
 import { screen_capture } from "../screenshot/capture";
 import { open } from "@tauri-apps/plugin-dialog";
 import { chat, embedding_with_file, vector_search } from "../../api";
+import MarkDownRender from "./MarkDownRender";
 
 function prompt(context: string) {
   return `# Role: 知识库专家。
@@ -39,7 +40,72 @@ type ChatMsg = {
 function Root() {
   let chatId = 0;
   const [text, setText] = createSignal("");
-  const [chats, setChats] = createSignal<ChatMsg[]>([]);
+  const [chats, setChats] = createSignal<ChatMsg[]>([
+    {
+      id: chatId++,
+      text: "你好",
+      type: "me",
+    },
+    {
+      id: chatId++,
+      text: "\u003cthink\u003e嗯，我现在遇到了一个代码片段，\u003c/think\u003e",
+      type: "other",
+    },
+    {
+      id: chatId++,
+      text: `
+# Hello World
+
+<think>This is a custom tag!</think>
+`,
+      type: "other",
+    },
+  ]);
+  const [rag, setRag] = createSignal(false);
+  const handleChat = async () => {
+    setChats((prev) => [...prev, { id: chatId++, text: text(), type: "me" }]);
+    const _text = text();
+    setText("");
+    let messages: { content: string; role: string }[];
+    if (rag()) {
+      const { data } = await vector_search(
+        "lrs33/bce-embedding-base_v1",
+        _text,
+        8
+      );
+      messages = [
+        { role: "system", content: prompt(data.join("\n")) },
+        { content: _text, role: "user" },
+      ];
+    } else {
+      messages = [
+        { role: "system", content: "" },
+        { content: _text, role: "user" },
+      ];
+    }
+
+    chat("deepseek-r1:14b", messages).then(async (reader) => {
+      const _chats = chats().slice(0);
+      const _chat: ChatMsg = {
+        id: chatId++,
+        text: "",
+        type: "other",
+      };
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) {
+          console.log("done");
+          break;
+        }
+        const text = new TextDecoder().decode(value);
+        const json = JSON.parse(
+          text.replace(/^data: /, "").replace(/data:\s+$/, "")
+        );
+        _chat.text += json.message.content;
+        setChats(_chats.concat([{ ..._chat }]));
+      }
+    });
+  };
   return (
     <div class="h-screen w-screen bg-slate-100 dark:bg-[#2f2f2f]">
       <div class="h-full flex flex-col px-2">
@@ -50,21 +116,46 @@ function Root() {
                 class="mb-2"
                 classList={{ "text-right": chat.type === "me" }}
               >
-                <span>{chat.text}</span>
+                <Switch>
+                  <Match when={chat.type === "me"}>
+                    <span>{chat.text}</span>
+                  </Match>
+                  <Match when={chat.type === "other"}>
+                    <MarkDownRender children={chat.text} />
+                  </Match>
+                </Switch>
               </div>
             )}
           </For>
         </div>
         <div>
           <textarea
-            class="w-full outline-none bg-slate-500 resize-none p-2 rounded-sm"
+            class="w-full outline-none bg-slate-500 resize-none p-2 rounded-sm dark:text-slate-100"
             name=""
             rows="3"
             id=""
             value={text()}
             onInput={(e) => setText(e.currentTarget.value)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleChat();
+              }
+            }}
           ></textarea>
           <div class="flex justify-end gap-2 mb-2">
+            <div class="flex items-center gap-1">
+              <input
+                type="checkbox"
+                class="checkbox checkbox-primary"
+                id="checkboxPrimary"
+                checked={rag()}
+                onChange={(e) => setRag(e.currentTarget.checked)}
+              />
+              <label class="label label-text text-base" for="checkboxPrimary">
+                Rag
+              </label>
+            </div>
             <button
               class="bg-blue-500 text-white px-4 py-2 rounded-md"
               onClick={async () => {
@@ -103,43 +194,7 @@ function Root() {
             </button>
             <button
               class="bg-blue-500 text-white px-4 py-2 rounded-md"
-              onClick={async () => {
-                setChats((prev) => [
-                  ...prev,
-                  { id: chatId++, text: text(), type: "me" },
-                ]);
-                const _text = text();
-                setText("");
-                const { data } = await vector_search(
-                  "lrs33/bce-embedding-base_v1",
-                  _text,
-                  8
-                );
-                chat("deepseek-r1:14b", [
-                  { role: "system", content: prompt(data.join("\n")) },
-                  { content: _text, role: "user" },
-                ]).then(async (reader) => {
-                  const _chats = chats().slice(0);
-                  const _chat: ChatMsg = {
-                    id: chatId++,
-                    text: "",
-                    type: "other",
-                  };
-                  while (reader) {
-                    const { done, value } = await reader.read();
-                    if (done) {
-                      console.log("done");
-                      break;
-                    }
-                    const text = new TextDecoder().decode(value);
-                    const json = JSON.parse(
-                      text.replace(/^data: /, "").replace(/data:\s+$/, "")
-                    );
-                    _chat.text += json.message.content;
-                    setChats(_chats.concat([{ ..._chat }]));
-                  }
-                });
-              }}
+              onClick={handleChat}
             >
               发送
             </button>

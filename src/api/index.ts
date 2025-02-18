@@ -1,22 +1,18 @@
-import request, { HOST } from "../utils/request";
+import request, { BASE_API } from "../utils/request";
 
 export function fetchApps() {
-  return fetch("http://localhost:8088/sys/quick_search/apps", {
-    method: "GET",
-  }).then((res) => res.json());
+  return request.get("/sys/quick_search/apps");
 }
 
 export function runApp(id: string) {
-  return fetch("http://localhost:8088/sys/quick_search/run_app/" + id, {
-    method: "GET",
-  }).then((res) => res.json());
+  return request.get("/sys/quick_search/run_app/" + id);
 }
 
 export function chat(
   model: string,
   messages: { content: string; role: string }[]
 ) {
-  return fetch(HOST + "/ai/ollama/chat", {
+  return fetch(BASE_API + "/ai/ollama/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -16,6 +16,7 @@ import { CanvasRenderImage, ScreenShotImage } from "./types";
 import ScreenShotCanvas, { ScreenShotCanvasRef } from "./ScreenShotCanvas";
 import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { screen_capture } from "./capture";
+import { BASE_API } from "../../utils/request";
 
 enum DragDirection {
   NW, // 左上
@@ -195,9 +196,8 @@ function ScreenShot() {
           payload.monitor_info.map((v) => ({
             monitorInfo: v,
             screenshotUrl:
-              `http://localhost:8088/sys/screenshot/get.png?screen_name=${encodeURIComponent(
-                v.name
-              )}&timestamp=` + Date.now(),
+              `${BASE_API}/sys/screenshot/get.png/${v.id}?timestamp=` +
+              Date.now(),
           }))
         );
         setWindowsInfo(

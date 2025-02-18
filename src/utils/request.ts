@@ -1,6 +1,6 @@
 // import { redirect } from "next/navigation";
 
-export const HOST = import.meta.env.VITE_BASE_API;
+export const BASE_API = import.meta.env.VITE_BASE_API;
 
 // const DEFAULT_HEADERS = {
 // authorization: `Bearer ${
@@ -225,7 +225,7 @@ export function toastFail(err: RequestError) {
 }
 
 const request = new HyperRequest({
-  baseURL: HOST,
+  baseURL: BASE_API,
   //   headers: DEFAULT_HEADERS,
   timeout: 60000 * 10,
   //   getToken: typeof window !== "undefined" ? () => getAuthToken() : () => getAuthTokenCookie()
