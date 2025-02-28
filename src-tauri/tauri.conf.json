@@ -32,11 +32,12 @@
         "title": "quick-search",
         "label": "quick-search",
         "url": "/sider/quick-start",
-        "visible": true,
+        "visible": false,
         "width": 800,
         "height": 60,
         "decorations": false,
-        "resizable": false
+        "resizable": false,
+        "skipTaskbar": true
       }
     ],
     "security": {

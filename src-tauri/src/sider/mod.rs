@@ -1,9 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use capture::CaptureService;
 use sider_local_ai::{
-    config::CHROME_RPC_DST,
-    sider::client::{notify_capture_client::NotifyCaptureClient, CaptureResultRequest},
-    tonic,
+    sider_rpc::{did_capture, tonic},
     tracing::{error, info},
 };
 use tauri::{Manager as _, WebviewWindow};
@@ -32,7 +30,7 @@ impl LocalServe {
     async fn run(self, screenshot_window: WebviewWindow) -> std::io::Result<()> {
         tokio::spawn(async {
             if let Err(err) = tonic::transport::Server::builder().add_service(
-                sider_local_ai::sider::client::screen_capture_action_server::ScreenCaptureActionServer::new(CaptureService::new(screenshot_window))
+                sider_local_ai::sider_rpc::client::screen_capture_action_server::ScreenCaptureActionServer::new(CaptureService::new(screenshot_window))
             ).serve("127.0.0.1:50052".parse().unwrap()).await {
                 error!("rpc service run error: {}", err);
             }
@@ -52,11 +50,7 @@ impl LocalServe {
     }
 
     pub async fn send_capture(&self, image: Vec<u8>) -> anyhow::Result<()> {
-        let mut client = NotifyCaptureClient::connect(CHROME_RPC_DST).await?;
-        let request = tonic::Request::new(CaptureResultRequest {
-            data: general_purpose::STANDARD.encode(image),
-        });
-        client.did_capture(request).await?;
+        did_capture(general_purpose::STANDARD.encode(image)).await?;
         Ok(())
     }
 }

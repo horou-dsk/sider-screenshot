@@ -1,8 +1,10 @@
 use serde_json::json;
 use sider_local_ai::{
     reqwest,
-    sider::client::GrpcEmptyMessage as Empty,
-    tonic::{self, Request, Response},
+    sider_rpc::client::{
+        screen_capture_action_server::ScreenCaptureAction, GrpcEmptyMessage as Empty,
+    },
+    sider_rpc::tonic::{self, Request, Response},
     tracing::error,
 };
 use tauri::{Emitter, WebviewWindow};
@@ -24,9 +26,7 @@ impl CaptureService {
 }
 
 #[tonic::async_trait]
-impl sider_local_ai::sider::client::screen_capture_action_server::ScreenCaptureAction
-    for CaptureService
-{
+impl ScreenCaptureAction for CaptureService {
     async fn will_capture(
         &self,
         _request: Request<Empty>,

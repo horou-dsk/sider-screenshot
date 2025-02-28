@@ -17,6 +17,17 @@
         "skipTaskbar": true,
         "transparent": true,
         "alwaysOnTop": true
+      },
+      {
+        "title": "quick-search",
+        "label": "quick-search",
+        "url": "/sider/quick-start",
+        "visible": false,
+        "skipTaskbar": true,
+        "width": 800,
+        "height": 60,
+        "decorations": false,
+        "resizable": false
       }
     ]
   }

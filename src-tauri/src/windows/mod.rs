@@ -33,7 +33,7 @@ pub fn set_window_size(
 ) -> windows::core::Result<()> {
     unsafe {
         // 移动窗口到全屏
-        SetWindowPos(hwnd, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW)?;
+        SetWindowPos(hwnd, Some(HWND_TOP), x, y, width, height, SWP_SHOWWINDOW)?;
 
         let _ = ShowWindow(hwnd, SW_SHOW);
         let _ = SetForegroundWindow(hwnd);

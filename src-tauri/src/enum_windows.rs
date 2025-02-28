@@ -1,6 +1,7 @@
 use serde::Serialize;
 use sider_local_ai::tracing::info;
-use windows::Win32::Foundation::{BOOL, HWND, LPARAM, RECT};
+use windows::core::BOOL;
+use windows::Win32::Foundation::{HWND, LPARAM, RECT};
 use windows::Win32::UI::WindowsAndMessaging::{
     EnumChildWindows, EnumWindows, GetClassNameW, GetWindowRect, GetWindowTextW, IsIconic,
     IsWindowVisible,
@@ -126,7 +127,7 @@ unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> B
         && unsafe { IsWindowVisible(hwnd).as_bool() && !IsIconic(hwnd).as_bool() }
         && String::from_utf16_lossy(&class_name[..len as usize]) != "Windows.UI.Core.CoreWindow"
     {
-        let _ = EnumChildWindows(hwnd, Some(enum_windows_callback), lparam);
+        let _ = EnumChildWindows(Some(hwnd), Some(enum_windows_callback), lparam);
         BOOL::from(callback.1(hwnd))
     } else {
         BOOL::from(true)

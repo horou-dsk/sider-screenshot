@@ -1,5 +1,4 @@
 import {
-  createEffect,
   createMemo,
   createResource,
   createSignal,
@@ -15,6 +14,7 @@ import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import "./quick-start.css";
 import { filterMatchs } from "./match";
 import QsMatchText from "./QsMatchText";
+import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 
 function QuickStart() {
   const [searchText, setSearchText] = createSignal("");
@@ -41,8 +41,10 @@ function QuickStart() {
   });
 
   let currentWindow = getCurrentWindow();
+  let unMount = false;
 
   onMount(() => {
+    let unlisten: () => void | undefined;
     if (container) {
       const observer = new ResizeObserver((entries) => {
         entries.forEach((entry) => {
@@ -57,10 +59,44 @@ function QuickStart() {
         observer.disconnect();
       });
     }
-  });
-
-  createEffect(() => {
-    console.log(searchApps());
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        currentWindow.hide();
+      }
+    };
+    window.addEventListener("keyup", handleKeyUp);
+    currentWindow
+      .onFocusChanged((event) => {
+        if (!event.payload) {
+          currentWindow.hide();
+        }
+      })
+      .then((_unlisten) => {
+        if (!unMount) {
+          unlisten = _unlisten;
+        } else {
+          _unlisten();
+        }
+      });
+    register("Alt+X", async (event) => {
+      if (event.state === "Pressed") {
+        if (await currentWindow.isVisible()) {
+          currentWindow.hide();
+        } else {
+          currentWindow.show();
+          refetch();
+          setSearchText("");
+          currentWindow.setAlwaysOnTop(true);
+          currentWindow.setFocus();
+        }
+      }
+    });
+    onCleanup(() => {
+      unMount = true;
+      unlisten?.();
+      unregister("Alt+X");
+      window.removeEventListener("keyup", handleKeyUp);
+    });
   });
 
   return (
@@ -74,6 +110,7 @@ function QuickStart() {
           class="w-full h-full outline-none bg-transparent px-3 text-2xl font-light"
           placeholder="Hi, Sider"
           value={searchText()}
+          autofocus
           onInput={(e) => setSearchText(e.currentTarget.value)}
         />
       </div>

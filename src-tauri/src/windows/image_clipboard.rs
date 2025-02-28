@@ -231,7 +231,7 @@ mod image_data {
             }
         }
 
-        if let Err(err) = unsafe { SetClipboardData(CF_DIBV5.0 as u32, HANDLE(hdata.0)) } {
+        if let Err(err) = unsafe { SetClipboardData(CF_DIBV5.0 as u32, Some(HANDLE(hdata.0))) } {
             let _ = unsafe { DeleteObject(HGDIOBJ(hdata.0)) };
             Err(err.into())
         } else {
@@ -256,7 +256,7 @@ mod image_data {
             let _ = global_unlock_checked(hdata);
         }
 
-        if let Err(err) = unsafe { SetClipboardData(format_id, HANDLE(hdata.0)) } {
+        if let Err(err) = unsafe { SetClipboardData(format_id, Some(HANDLE(hdata.0))) } {
             let _ = unsafe { DeleteObject(HGDIOBJ(hdata.0)) };
             return Err(anyhow::anyhow!("SetClipboardData Error {}", err));
         }
