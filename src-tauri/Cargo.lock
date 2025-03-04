@@ -1116,19 +1116,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crossbeam"
-version = "0.8.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1137cd7e7fc0fb5d3c5a8678be38ec56e819125d8d7907411fe24ccb943faca8"
-dependencies = [
- "crossbeam-channel",
- "crossbeam-deque",
- "crossbeam-epoch",
- "crossbeam-queue",
- "crossbeam-utils",
-]
-
-[[package]]
 name = "crossbeam-channel"
 version = "0.5.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1356,6 +1343,18 @@ name = "dispatch"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b"
+
+[[package]]
+name = "dispatch2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a0d569e003ff27784e0e14e4a594048698e0c0f0b66cabcb51511be55a7caa0"
+dependencies = [
+ "bitflags 2.8.0",
+ "block2 0.6.0",
+ "libc",
+ "objc2 0.6.0",
+]
 
 [[package]]
 name = "displaydoc"
@@ -2718,7 +2717,7 @@ dependencies = [
 name = "input-listen"
 version = "0.1.0"
 dependencies = [
- "crossbeam",
+ "crossbeam-channel",
  "rayon",
  "tracing",
  "windows 0.59.0",
@@ -3128,7 +3127,7 @@ dependencies = [
  "anyhow",
  "arboard",
  "clipboard-rs",
- "crossbeam",
+ "crossbeam-channel",
  "device_query",
  "enigo",
  "input-listen",
@@ -3543,6 +3542,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc2-av-foundation"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d23feab131fac01471f9bf0a6edeeae8ffc68645d103a488c01c2155bf40c77e"
+dependencies = [
+ "bitflags 2.8.0",
+ "block2 0.6.0",
+ "objc2 0.6.0",
+ "objc2-avf-audio",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-core-image 0.3.0",
+ "objc2-core-video",
+ "objc2-foundation 0.3.0",
+ "objc2-quartz-core 0.3.0",
+]
+
+[[package]]
+name = "objc2-avf-audio"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2fe5d8f6b9904a2028e9168bbdc77d06f944a39a0aef7076857db09f1298c9a"
+dependencies = [
+ "objc2 0.6.0",
+ "objc2-foundation 0.3.0",
+]
+
+[[package]]
 name = "objc2-cloud-kit"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3551,6 +3578,27 @@ dependencies = [
  "bitflags 2.8.0",
  "objc2 0.6.0",
  "objc2-foundation 0.3.0",
+]
+
+[[package]]
+name = "objc2-core-audio"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38591d29e45e81cb27870334467361ed788e7cfad7f85c1d30b1b6263fff3c2a"
+dependencies = [
+ "objc2 0.6.0",
+ "objc2-core-audio-types",
+ "objc2-core-foundation",
+]
+
+[[package]]
+name = "objc2-core-audio-types"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ffa9f6942675c6828092dd365f32c771eac9b983126b79e2ebc385954bfdf06"
+dependencies = [
+ "bitflags 2.8.0",
+ "objc2 0.6.0",
 ]
 
 [[package]]
@@ -3623,6 +3671,36 @@ checksum = "6ffa6bea72bf42c78b0b34e89c0bafac877d5f80bf91e159a5d96ea7f693ca56"
 dependencies = [
  "objc2 0.6.0",
  "objc2-foundation 0.3.0",
+]
+
+[[package]]
+name = "objc2-core-media"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95e0a1c424381b18712871e6984d0446c2d4952925a412fc606bd029d7b103ef"
+dependencies = [
+ "bitflags 2.8.0",
+ "block2 0.6.0",
+ "objc2 0.6.0",
+ "objc2-core-audio",
+ "objc2-core-audio-types",
+ "objc2-core-foundation",
+ "objc2-core-video",
+]
+
+[[package]]
+name = "objc2-core-video"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d83ac30509ad2a9ac0f9b5e9cb7a50c08ee2cc99ac8e2217a5481eee437a2f9"
+dependencies = [
+ "bitflags 2.8.0",
+ "block2 0.6.0",
+ "objc2 0.6.0",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-io-surface",
+ "objc2-metal 0.3.0",
 ]
 
 [[package]]
@@ -4528,7 +4606,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "crossbeam",
+ "crossbeam-channel",
  "image",
  "rayon",
  "serde",
@@ -5570,7 +5648,7 @@ dependencies = [
  "base64 0.22.1",
  "bytes",
  "chrono",
- "crossbeam",
+ "crossbeam-channel",
  "futures-util",
  "image",
  "input-listen",
@@ -5637,9 +5715,11 @@ name = "sider-upgrade"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "reqwest",
  "serde",
  "serde_json",
+ "sider-rpc",
  "tokio",
  "tracing",
  "windows 0.60.0",
@@ -8269,17 +8349,22 @@ checksum = "ec107c4503ea0b4a98ef47356329af139c0a4f7750e621cf2973cd3385ebcb3d"
 
 [[package]]
 name = "xcap"
-version = "0.3.3"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "161f900a1f2e909bae226f27dfb626d73af12f3441ca77b418efc5a851fba232"
+checksum = "7268ea053de76f064a0d4e85b83d9cb8a1291b0763342b5d88a3b69b4233b4c0"
 dependencies = [
  "dbus",
+ "dispatch2",
  "image",
+ "lazy_static",
  "log",
  "objc2 0.6.0",
  "objc2-app-kit 0.3.0",
+ "objc2-av-foundation",
  "objc2-core-foundation",
  "objc2-core-graphics",
+ "objc2-core-media",
+ "objc2-core-video",
  "objc2-foundation 0.3.0",
  "percent-encoding",
  "scopeguard",

@@ -1,7 +1,10 @@
 use base64::{engine::general_purpose, Engine as _};
 use capture::CaptureService;
 use sider_local_ai::{
-    sider_rpc::{did_capture, tonic},
+    sider_rpc::{
+        client::screen_capture_action_server::ScreenCaptureActionServer, did_capture,
+        tonic::service::Routes,
+    },
     tracing::{error, info},
 };
 use tauri::{Manager as _, WebviewWindow};
@@ -28,18 +31,16 @@ impl LocalServe {
     }
 
     async fn run(self, screenshot_window: WebviewWindow) -> std::io::Result<()> {
-        tokio::spawn(async {
-            if let Err(err) = tonic::transport::Server::builder().add_service(
-                sider_local_ai::sider_rpc::client::screen_capture_action_server::ScreenCaptureActionServer::new(CaptureService::new(screenshot_window))
-            ).serve("127.0.0.1:50052".parse().unwrap()).await {
-                error!("rpc service run error: {}", err);
-            }
-        });
+        let screen_capture_action_server =
+            ScreenCaptureActionServer::new(CaptureService::new(screenshot_window));
         let serve = sider_local_ai::LocalAppServe::new(sider_local_ai::config::Config {
             port: 8088,
             host: "127.0.0.1".to_string(),
             level: "info".to_string(),
-        });
+            rpc_host: [127, 0, 0, 1],
+            rpc_port: 50052,
+        })
+        .routes(Routes::new(screen_capture_action_server));
 
         if !cfg!(debug_assertions) {
             serve.run().await?;

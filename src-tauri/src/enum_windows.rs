@@ -52,11 +52,19 @@ pub struct WindowInfo {
 
 pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
     info!("skip_hwnd: {:?}", skip_hwnd);
-    let displays = xcap::Monitor::all().unwrap();
-    let max_width = displays.iter().map(|info| info.width()).max().unwrap() as i32;
-    let max_height = displays.iter().map(|info| info.height()).max().unwrap() as i32;
-    let min_x = displays.iter().map(|info| info.x()).min().unwrap();
-    let min_y = displays.iter().map(|info| info.y()).min().unwrap();
+    let displays = xcap::Monitor::all().expect("Failed to get monitors");
+    let max_width = displays
+        .iter()
+        .map(|info| info.width().unwrap())
+        .max()
+        .unwrap() as i32;
+    let max_height = displays
+        .iter()
+        .map(|info| info.height().unwrap())
+        .max()
+        .unwrap() as i32;
+    let min_x = displays.iter().map(|info| info.x().unwrap()).min().unwrap();
+    let min_y = displays.iter().map(|info| info.y().unwrap()).min().unwrap();
 
     let mut windows_info = vec![];
 

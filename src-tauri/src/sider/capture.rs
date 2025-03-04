@@ -56,10 +56,10 @@ pub async fn screen_capture(screenshot_window: &WebviewWindow) -> anyhow::Result
         (0, 0, 0, 0),
         |(min_x, min_y, right_width, bottom_height), info| {
             (
-                min_x.min(info.x()),
-                min_y.min(info.y()),
-                right_width.max(info.x() + info.width() as i32),
-                bottom_height.max(info.y() + info.height() as i32),
+                min_x.min(info.x().unwrap()),
+                min_y.min(info.y().unwrap()),
+                right_width.max(info.x().unwrap() + info.width().unwrap() as i32),
+                bottom_height.max(info.y().unwrap() + info.height().unwrap() as i32),
             )
         },
     );
@@ -71,14 +71,14 @@ pub async fn screen_capture(screenshot_window: &WebviewWindow) -> anyhow::Result
     let monitor_info: Vec<MonitorInfo> = monitor_info
         .into_iter()
         .map(|info| MonitorInfo {
-            x: info.x() - min_x,
-            y: info.y() - min_y,
-            width: info.width(),
-            height: info.height(),
-            is_primary: info.is_primary(),
-            scale_factor: info.scale_factor(),
-            id: info.id(),
-            name: info.name().to_string(),
+            x: info.x().unwrap() - min_x,
+            y: info.y().unwrap() - min_y,
+            width: info.width().unwrap(),
+            height: info.height().unwrap(),
+            is_primary: info.is_primary().unwrap(),
+            scale_factor: info.scale_factor().unwrap(),
+            id: info.id().unwrap(),
+            name: info.name().unwrap(),
         })
         .collect();
     if let Err(err) = screenshot_window.emit(
