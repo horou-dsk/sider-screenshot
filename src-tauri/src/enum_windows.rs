@@ -67,33 +67,34 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
     let min_y = displays.iter().map(|info| info.y().unwrap()).min().unwrap();
 
     let mut windows_info = vec![];
+    let mut title = [0u16; 256];
 
     // 定义枚举回调
     let mut callback = |hwnd: HWND| -> bool {
         // 获取窗口标题
-        let mut title = vec![0u16; 256];
         let len = unsafe { GetWindowTextW(hwnd, &mut title) as usize };
-        title.truncate(len);
+        let title = &title[..len];
 
         // 获取窗口位置和大小
         let mut rect = RECT::default();
         if unsafe { GetWindowRect(hwnd, &mut rect).is_ok() } {
-            let title_str = String::from_utf16_lossy(&title);
+            let title_str = String::from_utf16_lossy(title);
             if rect.left < -max_width || rect.top < -max_width {
                 return true;
             }
-            // 如果为负数，则为零
+            // 饱和运算，如果为负数，则为零
             let left = rect.left.saturating_sub(min_x);
             let top = rect.top.saturating_sub(min_y);
             let right = rect.right.min(max_width);
             let bottom = rect.bottom.min(max_height);
             let width = (right - min_x) - left;
             let height = (bottom - min_y) - top;
+            // 如果窗口太小或太大，则跳过
             if width < 25 || height < 25 || height > max_height || width > max_width {
                 return true;
             }
             windows_info.push(WindowInfo {
-                hwnd: format!("{:?}", hwnd),
+                hwnd: format!("{:02X?}", hwnd.0),
                 title: title_str,
                 x: left,
                 y: top,
