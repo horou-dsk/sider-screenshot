@@ -1,24 +1,31 @@
-import { Router } from "@solidjs/router";
-import { lazy } from "solid-js";
 import "./App.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { lazy } from "react";
+import { createBrowserRouter, RouterProvider } from "react-router";
 
-const routes = [
+const queryClient = new QueryClient();
+
+const routes = createBrowserRouter([
   {
     path: "/sider",
-    component: lazy(() => import("./app/root/Root.tsx")),
+    Component: lazy(() => import("./app/root/Root.tsx")),
   },
   {
     path: "/sider/screenshot",
-    component: lazy(() => import("./app/screenshot/ScreenShot.tsx")),
+    Component: lazy(() => import("./app/screenshot/ScreenShot.tsx")),
   },
   {
     path: "/sider/quick-start",
-    component: lazy(() => import("./app/quick-start/QuickStart.tsx")),
+    Component: lazy(() => import("./app/quick-start/QuickStart.tsx")),
   },
-];
+]);
 
 function App() {
-  return <Router>{routes}</Router>;
+  return (
+    <QueryClientProvider client={queryClient}>
+        <RouterProvider router={routes} />
+    </QueryClientProvider>
+  );
 }
 
 export default App;

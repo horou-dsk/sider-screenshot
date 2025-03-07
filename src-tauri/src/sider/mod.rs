@@ -33,14 +33,8 @@ impl LocalServe {
     async fn run(self, screenshot_window: WebviewWindow) -> std::io::Result<()> {
         let screen_capture_action_server =
             ScreenCaptureActionServer::new(CaptureService::new(screenshot_window));
-        let serve = sider_local_ai::LocalAppServe::new(sider_local_ai::config::Config {
-            port: 8088,
-            host: "127.0.0.1".to_string(),
-            level: "info".to_string(),
-            rpc_host: [127, 0, 0, 1],
-            rpc_port: 50052,
-        })
-        .routes(Routes::new(screen_capture_action_server));
+        let serve = sider_local_ai::LocalAppServe::new(sider_local_ai::config::Config::default())
+            .routes(Routes::new(screen_capture_action_server));
 
         if !cfg!(debug_assertions) {
             serve.run().await?;

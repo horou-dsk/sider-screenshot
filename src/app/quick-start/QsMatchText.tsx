@@ -1,5 +1,3 @@
-import { For, Match, Switch } from "solid-js";
-
 function QsMatchText({
   name,
   matchIndex,
@@ -7,9 +5,9 @@ function QsMatchText({
   name: string;
   matchIndex: { start: number; end: number }[];
 }) {
-  let splitText = [];
+  const splitText = [];
   let start = 0;
-  for (let mi of matchIndex) {
+  for (const mi of matchIndex) {
     const nonMatch = name.substring(start, mi.start);
     if (nonMatch) {
       splitText.push({ text: nonMatch, isMatch: false });
@@ -20,20 +18,9 @@ function QsMatchText({
   if (start < name.length) {
     splitText.push({ text: name.substring(start), isMatch: false });
   }
-  return (
-    <For each={splitText}>
-      {({ text, isMatch }) => (
-        <Switch>
-          <Match when={isMatch}>
-            <span class="text-[#ec802e]">{text}</span>
-          </Match>
-          <Match when={!isMatch}>
-            <span>{text}</span>
-          </Match>
-        </Switch>
-      )}
-    </For>
-  );
+  return splitText.map(({ text, isMatch }) => isMatch ? (
+    <span key={text} className="text-[#ec802e]">{text}</span>
+  ) : (<span key={text}>{text}</span>));
 }
 
 export default QsMatchText;

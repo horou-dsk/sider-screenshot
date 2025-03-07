@@ -1,11 +1,12 @@
-import { createSignal, For, Match, Switch } from "solid-js";
 import { screen_capture } from "../screenshot/capture";
 import { open } from "@tauri-apps/plugin-dialog";
 import { chat, embedding_with_file, vector_search } from "../../api";
-import MarkDownRender from "./MarkDownRender";
+import { useState } from "react";
+import classnames from "classnames";
+import MarkDownRender from "../../components/MarkDownRender/MarkDownRender";
 
 function prompt(context: string) {
-  return `# Role: 知识库专家。
+	return `# Role: 知识库专家。
 
  ## Constraints:
  - **严格遵循工作流程**： 严格遵循<Workflow >中设定的工作流程。
@@ -32,177 +33,179 @@ function prompt(context: string) {
 }
 
 type ChatMsg = {
-  id: number;
-  text: string;
-  type: "me" | "other";
+	id: number;
+	text: string;
+	type: "me" | "other";
 };
 
 function Root() {
-  let chatId = 0;
-  const [text, setText] = createSignal("");
-  const [chats, setChats] = createSignal<ChatMsg[]>([
-    {
-      id: chatId++,
-      text: "你好",
-      type: "me",
-    },
-    {
-      id: chatId++,
-      text: "\u003cthink\u003e嗯，我现在遇到了一个代码片段，\u003c/think\u003e",
-      type: "other",
-    },
-    {
-      id: chatId++,
-      text: `
-# Hello World
+	let chatId = 0;
+	const [text, setText] = useState("");
+	const [chats, setChats] = useState<ChatMsg[]>([
+		//     {
+		//       id: chatId++,
+		//       text: "你好",
+		//       type: "me",
+		//     },
+		//     {
+		//       id: chatId++,
+		//       text: "\u003cthink\u003e嗯，我现在遇到了一个代码片段，\u003c/think\u003e",
+		//       type: "other",
+		//     },
+		//     {
+		//       id: chatId++,
+		//       text: `
+		// # Hello World
+		// <think>This is a custom tag!</think>
+		// `,
+		//       type: "other",
+		//     },
+	]);
+	const [rag, setRag] = useState(true);
+	const handleChat = async () => {
+		const _chats: ChatMsg[] = [...chats, { id: chatId++, text, type: "me" }];
+		setChats(_chats);
+		setText("");
+		let messages: { content: string; role: string }[];
+		if (rag) {
+			const { data } = await vector_search(
+				"lrs33/bce-embedding-base_v1",
+				text,
+				8,
+			);
+			messages = [
+				{ role: "system", content: prompt(data.join("\n")) },
+				{ content: text, role: "user" },
+			];
+		} else {
+			messages = [
+				{ role: "system", content: "" },
+				{ content: text, role: "user" },
+			];
+		}
 
-<think>This is a custom tag!</think>
-`,
-      type: "other",
-    },
-  ]);
-  const [rag, setRag] = createSignal(false);
-  const handleChat = async () => {
-    setChats((prev) => [...prev, { id: chatId++, text: text(), type: "me" }]);
-    const _text = text();
-    setText("");
-    let messages: { content: string; role: string }[];
-    if (rag()) {
-      const { data } = await vector_search(
-        "lrs33/bce-embedding-base_v1",
-        _text,
-        8
-      );
-      messages = [
-        { role: "system", content: prompt(data.join("\n")) },
-        { content: _text, role: "user" },
-      ];
-    } else {
-      messages = [
-        { role: "system", content: "" },
-        { content: _text, role: "user" },
-      ];
-    }
-
-    chat("deepseek-r1:14b", messages).then(async (reader) => {
-      const _chats = chats().slice(0);
-      const _chat: ChatMsg = {
-        id: chatId++,
-        text: "",
-        type: "other",
-      };
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) {
-          console.log("done");
-          break;
-        }
-        const text = new TextDecoder().decode(value);
-        const json = JSON.parse(
-          text.replace(/^data: /, "").replace(/data:\s+$/, "")
-        );
-        _chat.text += json.message.content;
-        setChats(_chats.concat([{ ..._chat }]));
-      }
-    });
-  };
-  return (
-    <div class="h-screen w-screen bg-slate-100 dark:bg-[#2f2f2f]">
-      <div class="h-full flex flex-col px-2">
-        <div class="flex-1 py-2">
-          <For each={chats()}>
-            {(chat) => (
-              <div
-                class="mb-2"
-                classList={{ "text-right": chat.type === "me" }}
-              >
-                <Switch>
-                  <Match when={chat.type === "me"}>
-                    <span>{chat.text}</span>
-                  </Match>
-                  <Match when={chat.type === "other"}>
-                    <MarkDownRender children={chat.text} />
-                  </Match>
-                </Switch>
-              </div>
-            )}
-          </For>
-        </div>
-        <div>
-          <textarea
-            class="w-full outline-none bg-slate-500 resize-none p-2 rounded-sm dark:text-slate-100"
-            name=""
-            rows="3"
-            id=""
-            value={text()}
-            onInput={(e) => setText(e.currentTarget.value)}
-            onKeyPress={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleChat();
-              }
-            }}
-          ></textarea>
-          <div class="flex justify-end gap-2 mb-2">
-            <div class="flex items-center gap-1">
-              <input
-                type="checkbox"
-                class="checkbox checkbox-primary"
-                id="checkboxPrimary"
-                checked={rag()}
-                onChange={(e) => setRag(e.currentTarget.checked)}
-              />
-              <label class="label label-text text-base" for="checkboxPrimary">
-                Rag
-              </label>
-            </div>
-            <button
-              class="bg-blue-500 text-white px-4 py-2 rounded-md"
-              onClick={async () => {
-                await screen_capture();
-              }}
-            >
-              截屏
-            </button>
-            <button
-              onClick={() => setChats([])}
-              class="bg-red-500 text-white px-4 py-2 rounded-md"
-            >
-              清理
-            </button>
-            <button
-              class="bg-neutral-300 text-white px-4 py-2 rounded-md"
-              onClick={async () => {
-                const f = await open({
-                  multiple: false,
-                  directory: false,
-                  filters: [
-                    {
-                      name: "*",
-                      extensions: ["pdf"],
-                    },
-                  ],
-                });
-                if (f) {
-                  embedding_with_file("lrs33/bce-embedding-base_v1", f).then(
-                    console.log
-                  );
-                }
-              }}
-            >
-              选择pdf
-            </button>
-            <button
-              class="bg-blue-500 text-white px-4 py-2 rounded-md"
-              onClick={handleChat}
-            >
-              发送
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+		chat("deepseek-r1:14b", messages).then(async (reader) => {
+			const _chat: ChatMsg = {
+				id: chatId++,
+				text: "",
+				type: "other",
+			};
+			while (reader) {
+				const { done, value } = await reader.read();
+				if (done) {
+					console.log("done");
+					break;
+				}
+				const text = new TextDecoder().decode(value);
+				const json = JSON.parse(
+					text.replace(/^data: /, "").replace(/data:\s+$/, ""),
+				);
+				_chat.text += json.message.content;
+				setChats(_chats.concat([{ ..._chat }]));
+			}
+		});
+	};
+	return (
+		<div className="h-screen w-screen bg-slate-100 dark:bg-[#2f2f2f]">
+			<div className="h-full flex flex-col px-2">
+				<div className="flex-1 py-2">
+					{chats.map((chat) => (
+						<div
+							key={chat.id}
+							className={classnames("mb-2", {
+								"text-right": chat.type === "me",
+							})}
+						>
+							{chat.type === "me" ? (
+								<span>{chat.text}</span>
+							) : (
+								<MarkDownRender>{chat.text}</MarkDownRender>
+							)}
+						</div>
+					))}
+				</div>
+				<div>
+					<textarea
+						className="w-full outline-none bg-slate-500 resize-none p-2 rounded-sm dark:text-slate-100"
+						name=""
+						rows={3}
+						id=""
+						value={text}
+						onInput={(e) => setText(e.currentTarget.value)}
+						onKeyUp={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								handleChat();
+							}
+						}}
+					/>
+					<div className="flex justify-end gap-2 mb-2">
+						<div className="flex items-center gap-1">
+							<input
+								type="checkbox"
+								className="checkbox checkbox-primary"
+								id="checkboxPrimary"
+								checked={rag}
+								onChange={(e) => setRag(e.currentTarget.checked)}
+							/>
+							<label
+								className="label label-text text-base"
+								htmlFor="checkboxPrimary"
+							>
+								Rag
+							</label>
+						</div>
+						<button
+							type="button"
+							className="bg-blue-500 text-white px-4 py-2 rounded-md"
+							onClick={async () => {
+								await screen_capture();
+							}}
+						>
+							截屏
+						</button>
+						<button
+							type="button"
+							onClick={() => setChats([])}
+							className="bg-red-500 text-white px-4 py-2 rounded-md"
+						>
+							清理
+						</button>
+						<button
+							type="button"
+							className="bg-neutral-300 text-white px-4 py-2 rounded-md"
+							onClick={async () => {
+								const f = await open({
+									multiple: false,
+									directory: false,
+									filters: [
+										{
+											name: "*",
+											extensions: ["pdf"],
+										},
+									],
+								});
+								if (f) {
+									embedding_with_file("lrs33/bce-embedding-base_v1", f).then(
+										console.log,
+									);
+								}
+							}}
+						>
+							选择pdf
+						</button>
+						<button
+							type="button"
+							className="bg-blue-500 text-white px-4 py-2 rounded-md"
+							onClick={handleChat}
+						>
+							发送
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export default Root;

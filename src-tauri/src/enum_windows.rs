@@ -94,7 +94,7 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
                 return true;
             }
             windows_info.push(WindowInfo {
-                hwnd: format!("{:02X?}", hwnd.0),
+                hwnd: format!("{:08X}", hwnd.0 as usize),
                 title: title_str,
                 x: left,
                 y: top,
