@@ -1,8 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
+import { request_capture_screen } from "../../api";
 
 export async function screen_capture() {
-  await fetch("http://localhost:8088/sys/screenshot/capture", {
-    method: "GET",
-  });
-  await invoke("capture_screen");
+	await request_capture_screen();
+	await invoke("capture_screen");
 }

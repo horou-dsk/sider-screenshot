@@ -34,3 +34,10 @@ export function embedding_with_file(model: string, file_path: string) {
 export function vector_search(model: string, query: string, limit: number) {
 	return request.post("/ai/ollama/vector_search", [model, query, limit]);
 }
+
+export async function request_capture_screen() {
+	const baseURL = await base_api();
+	return fetch(`${baseURL}/sys/screenshot/capture`, {
+		method: "GET",
+	});
+}
