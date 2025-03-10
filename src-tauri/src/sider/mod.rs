@@ -14,7 +14,21 @@ use crate::windows::image_clipboard;
 pub mod capture;
 
 #[derive(Clone)]
-pub struct LocalServe {}
+pub struct LocalServe {
+    port: u16,
+}
+
+impl Default for LocalServe {
+    fn default() -> Self {
+        Self {
+            port: std::net::TcpListener::bind("127.0.0.1:0")
+                .unwrap()
+                .local_addr()
+                .unwrap()
+                .port(),
+        }
+    }
+}
 
 impl LocalServe {
     pub fn local_serve_run(self, screenshot_window: WebviewWindow) -> Self {
@@ -33,7 +47,11 @@ impl LocalServe {
     async fn run(self, screenshot_window: WebviewWindow) -> std::io::Result<()> {
         let screen_capture_action_server =
             ScreenCaptureActionServer::new(CaptureService::new(screenshot_window));
-        let serve = sider_local_ai::LocalAppServe::new(sider_local_ai::config::Config::default())
+        let serve_config = sider_local_ai::config::Config {
+            port: self.port,
+            ..Default::default()
+        };
+        let serve = sider_local_ai::LocalAppServe::new(serve_config)
             .routes(Routes::new(screen_capture_action_server));
 
         if !cfg!(debug_assertions) {
@@ -47,6 +65,10 @@ impl LocalServe {
     pub async fn send_capture(&self, image: Vec<u8>) -> anyhow::Result<()> {
         did_capture(general_purpose::STANDARD.encode(image)).await?;
         Ok(())
+    }
+
+    pub fn port(&self) -> u16 {
+        self.port
     }
 }
 

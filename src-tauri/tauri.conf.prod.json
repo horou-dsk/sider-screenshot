@@ -3,16 +3,23 @@
   "identifier": "com.sider-tauri.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:8088",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
+        "title": "sider",
+        "url": "/",
+        "width": 800,
+        "height": 600,
+        "devtools": true,
+        "transparent": true
+      },
+      {
         "title": "sider-screenshot",
         "label": "screenshot",
-        "url": "/sider/screenshot",
+        "url": "/screenshot",
         "visible": false,
         "skipTaskbar": true,
         "transparent": true,
@@ -21,7 +28,7 @@
       {
         "title": "quick-search",
         "label": "quick-search",
-        "url": "/sider/quick-start",
+        "url": "/quick-start",
         "visible": false,
         "skipTaskbar": true,
         "width": 800,

@@ -13,7 +13,7 @@
     "windows": [
       {
         "title": "sider",
-        "url": "/sider",
+        "url": "/",
         "width": 800,
         "height": 600,
         "devtools": true,
@@ -22,7 +22,7 @@
       {
         "title": "sider-screenshot",
         "label": "screenshot",
-        "url": "/sider/screenshot",
+        "url": "/screenshot",
         "visible": false,
         "skipTaskbar": true,
         "transparent": true,
@@ -31,7 +31,7 @@
       {
         "title": "quick-search",
         "label": "quick-search",
-        "url": "/sider/quick-start",
+        "url": "/quick-start",
         "visible": false,
         "width": 800,
         "height": 60,

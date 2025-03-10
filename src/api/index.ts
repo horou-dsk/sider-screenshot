@@ -1,4 +1,4 @@
-import request, { BASE_API } from "../utils/request";
+import request, { base_api } from "../utils/request";
 
 export function fetchApps() {
 	return request.get("/sys/quick_search/apps");
@@ -8,11 +8,12 @@ export function runApp(id: string) {
 	return request.get(`/sys/quick_search/run_app/${id}`);
 }
 
-export function chat(
+export async function chat(
 	model: string,
 	messages: { content: string; role: string }[],
 ) {
-	return fetch(`${BASE_API}/ai/ollama/chat`, {
+	const baseURL = await base_api();
+	return fetch(`${baseURL}/ai/ollama/chat`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",

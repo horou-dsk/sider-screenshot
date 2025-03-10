@@ -8,7 +8,7 @@ import type { CanvasRenderImage, ScreenShotImage } from "./types";
 import ScreenShotCanvas, { type ScreenShotCanvasRef } from "./ScreenShotCanvas";
 import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { screen_capture } from "./capture";
-import { BASE_API } from "../../utils/request";
+import { base_api } from "../../utils/request";
 import {
 	type MouseEvent as ReactMouseEvent,
 	useCallback,
@@ -205,13 +205,15 @@ function ScreenShot() {
 			.listen("show-window", (event) => {
 				const payload = event.payload as ShotShowWindowPayload;
 				const info = payload.window_info;
-				console.log(payload);
-				setScreenShots(
-					payload.monitor_info.map((v) => ({
-						monitorInfo: v,
-						screenshotUrl: `${BASE_API}/sys/screenshot/get.png/${v.id}?timestamp=${Date.now()}`,
-					})),
-				);
+				(async () => {
+					const baseURL = await base_api();
+					setScreenShots(
+						payload.monitor_info.map((v) => ({
+							monitorInfo: v,
+							screenshotUrl: `${baseURL}/sys/screenshot/get.png/${v.id}?timestamp=${Date.now()}`,
+						})),
+					);
+				})();
 				setWindowsInfo(
 					info.map((item) => ({
 						...item,

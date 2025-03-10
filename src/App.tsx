@@ -6,26 +6,26 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 const queryClient = new QueryClient();
 
 const routes = createBrowserRouter([
-  {
-    path: "/sider",
-    Component: lazy(() => import("./app/root/Root.tsx")),
-  },
-  {
-    path: "/sider/screenshot",
-    Component: lazy(() => import("./app/screenshot/ScreenShot.tsx")),
-  },
-  {
-    path: "/sider/quick-start",
-    Component: lazy(() => import("./app/quick-start/QuickStart.tsx")),
-  },
+	{
+		path: "/",
+		Component: lazy(() => import("./app/root/Root.tsx")),
+	},
+	{
+		path: "/screenshot",
+		Component: lazy(() => import("./app/screenshot/ScreenShot.tsx")),
+	},
+	{
+		path: "/quick-start",
+		Component: lazy(() => import("./app/quick-start/QuickStart.tsx")),
+	},
 ]);
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-        <RouterProvider router={routes} />
-    </QueryClientProvider>
-  );
+	return (
+		<QueryClientProvider client={queryClient}>
+			<RouterProvider router={routes} />
+		</QueryClientProvider>
+	);
 }
 
 export default App;

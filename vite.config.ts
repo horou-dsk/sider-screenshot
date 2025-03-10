@@ -42,5 +42,5 @@ export default defineConfig(async ({ mode }) => ({
 	//   include: ["solid-markdown > micromark", "solid-markdown > unified"],
 	// },
 
-	base: "/sider",
+	base: "",
 }));

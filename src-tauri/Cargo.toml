@@ -67,3 +67,7 @@ codegen-units = 1
 opt-level = "s"
 strip = true
 panic = "abort"
+
+[profile.release.package.wry]
+debug = true
+debug-assertions = true

@@ -37,6 +37,12 @@ async fn capture_screen(app: tauri::AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+#[tauri::command]
+async fn get_local_serve_port(app: tauri::AppHandle) -> tauri::Result<u16> {
+    let local_serve = app.state::<LocalServe>();
+    Ok(local_serve.port())
+}
+
 // #[tauri::command]
 // fn image_to_clipboard(image: Vec<u8>, _width: u32, _height: u32) {
 //     // let mut file = File::create("test.png").unwrap();
@@ -68,14 +74,15 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             hide_window,
             capture_screen,
-            send_capture
+            send_capture,
+            get_local_serve_port,
         ])
         .setup(|app| {
             app.handle()
                 .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
-            app.manage(LocalServe {}.local_serve_run(screenshot_window));
+            app.manage(LocalServe::default().local_serve_run(screenshot_window));
             if let Err(err) = quick_search::init_window(app) {
                 error!("init quick search window error: {}", err);
             }
