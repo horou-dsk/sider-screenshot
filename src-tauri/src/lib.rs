@@ -71,6 +71,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             hide_window,
             capture_screen,
@@ -78,8 +79,6 @@ pub fn run() {
             get_local_serve_port,
         ])
         .setup(|app| {
-            app.handle()
-                .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
             app.manage(LocalServe::default().local_serve_run(screenshot_window));

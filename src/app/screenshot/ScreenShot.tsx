@@ -243,18 +243,24 @@ function ScreenShot() {
 			}
 		};
 		window.addEventListener("keyup", handleKeyUp);
+		return () => {
+			unMount = true;
+			unlisten?.();
+			window.removeEventListener("keyup", handleKeyUp);
+		};
+	}, [handleSelectWindow, hide]);
+
+	useEffect(() => {
 		register("CommandOrControl+Alt+D", (event) => {
 			if (event.state === "Pressed") {
 				screen_capture();
 			}
 		});
 		return () => {
-			unMount = true;
-			unlisten?.();
-			window.removeEventListener("keyup", handleKeyUp);
 			unregister("CommandOrControl+Alt+D");
 		};
-	}, [handleSelectWindow, hide]);
+	}, []);
+
 	return (
 		<main className="h-screen w-screen select-none">
 			{screenShots.length > 0 &&

@@ -1,6 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use capture::CaptureService;
 use sider_local_ai::{
+    config::Config as ServeConfig,
     sider_rpc::{
         client::screen_capture_action_server::ScreenCaptureActionServer, did_capture,
         tonic::service::Routes,
@@ -15,18 +16,20 @@ pub mod capture;
 
 #[derive(Clone)]
 pub struct LocalServe {
-    port: u16,
+    config: ServeConfig,
 }
 
 impl Default for LocalServe {
     fn default() -> Self {
-        Self {
+        let config = ServeConfig::load("./Config.toml").unwrap_or_else(|_| ServeConfig {
             port: std::net::TcpListener::bind("127.0.0.1:0")
                 .unwrap()
                 .local_addr()
                 .unwrap()
                 .port(),
-        }
+            ..Default::default()
+        });
+        Self { config }
     }
 }
 
@@ -47,11 +50,7 @@ impl LocalServe {
     async fn run(self, screenshot_window: WebviewWindow) -> std::io::Result<()> {
         let screen_capture_action_server =
             ScreenCaptureActionServer::new(CaptureService::new(screenshot_window));
-        let serve_config = sider_local_ai::config::Config {
-            port: self.port,
-            ..Default::default()
-        };
-        let serve = sider_local_ai::LocalAppServe::new(serve_config)
+        let serve = sider_local_ai::LocalAppServe::new(self.config)
             .routes(Routes::new(screen_capture_action_server));
 
         if !cfg!(debug_assertions) {
@@ -68,7 +67,7 @@ impl LocalServe {
     }
 
     pub fn port(&self) -> u16 {
-        self.port
+        self.config.port
     }
 }
 

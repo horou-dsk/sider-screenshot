@@ -11,11 +11,11 @@ if (Test-Path .\sider.exe) {
     Remove-Item .\sider.exe
 }
 Rename-Item .\sider-tauri.exe .\sider.exe
-if (Test-Path .\dist) {
-    Remove-Item .\dist -Recurse
-}
-Copy-Item ..\..\..\dist .\dist -Recurse
+# if (Test-Path .\dist) {
+#     Remove-Item .\dist -Recurse
+# }
+# Copy-Item ..\..\..\dist .\dist -Recurse
 
 # upx -9 sider.exe
-7z.exe a sider.zip dist\ sider.exe
+# 7z.exe a sider.zip dist\ sider.exe
 Pop-Location

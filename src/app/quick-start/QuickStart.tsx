@@ -7,6 +7,7 @@ import QsMatchText from "./QsMatchText";
 import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useBaseApi } from "../../hooks/useBaseApi";
 
 function QuickStart() {
 	const [searchText, setSearchText] = useState("");
@@ -82,6 +83,8 @@ function QuickStart() {
 		};
 	}, [refetch]);
 
+	const base_api = useBaseApi();
+
 	return (
 		<div
 			className="w-screen bg-slate-100 dark:bg-[#2f2f2f] overflow-hidden"
@@ -112,7 +115,7 @@ function QuickStart() {
 							>
 								<img
 									className="object-contain w-8 h-8"
-									src={`http://localhost:8088/sys/quick_search/app_icon/${item.id}`}
+									src={`${base_api}/sys/quick_search/app_icon/${item.id}`}
 									alt=""
 								/>
 								<div className="text-xs pt-2 break-all text-center text-ellipsis line-clamp-2">
