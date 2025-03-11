@@ -1,11 +1,9 @@
 use base64::{engine::general_purpose, Engine as _};
+#[cfg(not(debug_assertions))]
 use capture::CaptureService;
 use sider_local_ai::{
     config::Config as ServeConfig,
-    sider_rpc::{
-        client::screen_capture_action_server::ScreenCaptureActionServer, did_capture,
-        tonic::service::Routes,
-    },
+    sider_rpc::did_capture,
     tracing::{error, info},
 };
 use tauri::{Manager as _, WebviewWindow};
@@ -34,6 +32,7 @@ impl Default for LocalServe {
 }
 
 impl LocalServe {
+    #[cfg(not(debug_assertions))]
     pub fn local_serve_run(self, screenshot_window: WebviewWindow) -> Self {
         let this = self.clone();
         std::thread::spawn(move || {
@@ -47,17 +46,23 @@ impl LocalServe {
         self
     }
 
+    #[cfg(debug_assertions)]
+    pub fn local_serve_run(self, _screenshot_window: WebviewWindow) -> Self {
+        self
+    }
+
+    #[cfg(not(debug_assertions))]
     async fn run(self, screenshot_window: WebviewWindow) -> std::io::Result<()> {
+        use sider_local_ai::sider_rpc::{
+            client::screen_capture_action_server::ScreenCaptureActionServer, tonic::service::Routes,
+        };
         let screen_capture_action_server =
             ScreenCaptureActionServer::new(CaptureService::new(screenshot_window));
         let serve = sider_local_ai::LocalAppServe::new(self.config)
             .routes(Routes::new(screen_capture_action_server));
 
-        if !cfg!(debug_assertions) {
-            serve.run().await?;
-        } else {
-            tokio::time::sleep(std::time::Duration::from_secs(10000)).await;
-        }
+        serve.run().await?;
+
         Ok(())
     }
 
