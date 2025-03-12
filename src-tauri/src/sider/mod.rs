@@ -90,7 +90,7 @@ pub async fn send_capture(app: tauri::AppHandle, image: Vec<u8>) -> tauri::Resul
     //     eprintln!("设置剪贴板失败 {}", err);
     // }
     let d_image = image::load_from_memory_with_format(&image, image::ImageFormat::Png)
-        .map_err(|err| tauri::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, err)))?;
+        .map_err(|err| tauri::Error::Io(std::io::Error::other(err)))?;
 
     std::thread::spawn(move || {
         for _ in 0..3 {

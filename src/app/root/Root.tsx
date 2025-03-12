@@ -41,26 +41,7 @@ type ChatMsg = {
 function Root() {
 	let chatId = 0;
 	const [text, setText] = useState("");
-	const [chats, setChats] = useState<ChatMsg[]>([
-		//     {
-		//       id: chatId++,
-		//       text: "你好",
-		//       type: "me",
-		//     },
-		//     {
-		//       id: chatId++,
-		//       text: "\u003cthink\u003e嗯，我现在遇到了一个代码片段，\u003c/think\u003e",
-		//       type: "other",
-		//     },
-		//     {
-		//       id: chatId++,
-		//       text: `
-		// # Hello World
-		// <think>This is a custom tag!</think>
-		// `,
-		//       type: "other",
-		//     },
-	]);
+	const [chats, setChats] = useState<ChatMsg[]>([]);
 	const [rag, setRag] = useState(true);
 	const handleChat = async () => {
 		const _chats: ChatMsg[] = [...chats, { id: chatId++, text, type: "me" }];

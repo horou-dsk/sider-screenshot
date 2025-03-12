@@ -7,10 +7,10 @@ $env:TAURI_CONFIG = $null
 Pop-Location
 
 Push-Location .\src-tauri\target\release
-if (Test-Path .\sider.exe) {
-    Remove-Item .\sider.exe
+if (Test-Path .\sider-ai.exe) {
+    Remove-Item .\sider-ai.exe
 }
-Rename-Item .\sider-tauri.exe .\sider.exe
+Rename-Item .\sider-tauri.exe .\sider-ai.exe
 # if (Test-Path .\dist) {
 #     Remove-Item .\dist -Recurse
 # }

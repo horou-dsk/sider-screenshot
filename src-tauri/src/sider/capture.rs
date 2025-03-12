@@ -17,6 +17,7 @@ pub struct CaptureService {
 }
 
 impl CaptureService {
+    #[allow(dead_code)]
     pub fn new(screenshot_window: WebviewWindow) -> CaptureService {
         CaptureService {
             screenshot_window,
