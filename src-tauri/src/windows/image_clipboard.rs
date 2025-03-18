@@ -1,3 +1,4 @@
+#![allow(unsafe_op_in_unsafe_fn)]
 // use std::ops::Range;
 
 // use image::{DynamicImage, GenericImageView};
@@ -120,10 +121,10 @@ mod image_data {
     use std::{borrow::Cow, io, ptr::copy_nonoverlapping};
     use windows::Win32::{
         Foundation::{HANDLE, HGLOBAL},
-        Graphics::Gdi::{DeleteObject, BITMAPV5HEADER, BI_BITFIELDS, HGDIOBJ, LCS_GM_IMAGES},
+        Graphics::Gdi::{BI_BITFIELDS, BITMAPV5HEADER, DeleteObject, HGDIOBJ, LCS_GM_IMAGES},
         System::{
             DataExchange::SetClipboardData,
-            Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GHND},
+            Memory::{GHND, GlobalAlloc, GlobalLock, GlobalUnlock},
             Ole::CF_DIBV5,
         },
     };
@@ -157,11 +158,11 @@ mod image_data {
         anyhow::anyhow!("{}: {}", message, os_error)
     }
 
-    unsafe fn global_unlock_checked(hdata: HGLOBAL) -> Result<()> {
+    fn global_unlock_checked(hdata: HGLOBAL) -> Result<()> {
         // If the memory object is unlocked after decrementing the lock count, the function
         // returns zero and GetLastError returns NO_ERROR. If it fails, the return value is
         // zero and GetLastError returns a value other than NO_ERROR.
-        GlobalUnlock(hdata)?;
+        unsafe { GlobalUnlock(hdata)? };
         Ok(())
     }
 
@@ -207,7 +208,7 @@ mod image_data {
         let image = flip_v(image);
 
         let data_size = header_size + image.2.len();
-        let hdata = unsafe { global_alloc(data_size)? };
+        let hdata = global_alloc(data_size)?;
         unsafe {
             let data_ptr = global_lock(hdata)?;
             let _unlock = ScopeGuard::new(|| {
@@ -249,7 +250,7 @@ mod image_data {
         };
 
         let data_size = buf.len();
-        let hdata = unsafe { global_alloc(data_size)? };
+        let hdata = global_alloc(data_size)?;
         unsafe {
             let pixels_dst = global_lock(hdata)?;
             copy_nonoverlapping::<u8>(buf.as_ptr(), pixels_dst, data_size);
@@ -263,8 +264,8 @@ mod image_data {
         Ok(())
     }
 
-    unsafe fn global_alloc(bytes: usize) -> Result<HGLOBAL> {
-        let hdata = GlobalAlloc(GHND, bytes)?;
+    fn global_alloc(bytes: usize) -> Result<HGLOBAL> {
+        let hdata = unsafe { GlobalAlloc(GHND, bytes)? };
         if hdata.is_invalid() {
             Err(last_error("Could not allocate global memory object"))
         } else {
@@ -272,8 +273,8 @@ mod image_data {
         }
     }
 
-    unsafe fn global_lock(hmem: HGLOBAL) -> Result<*mut u8> {
-        let data_ptr = GlobalLock(hmem) as *mut u8;
+    fn global_lock(hmem: HGLOBAL) -> Result<*mut u8> {
+        let data_ptr = unsafe { GlobalLock(hmem) as *mut u8 };
         if data_ptr.is_null() {
             Err(last_error("Could not lock the global memory object"))
         } else {

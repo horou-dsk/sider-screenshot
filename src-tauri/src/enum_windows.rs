@@ -1,11 +1,11 @@
 use serde::Serialize;
 use sider_local_ai::tracing::info;
-use windows::core::BOOL;
 use windows::Win32::Foundation::{HWND, LPARAM, RECT};
 use windows::Win32::UI::WindowsAndMessaging::{
     EnumChildWindows, EnumWindows, GetClassNameW, GetWindowRect, GetWindowTextW, IsIconic,
     IsWindowVisible,
 };
+use windows::core::BOOL;
 
 struct Callback<'a>(HWND, &'a mut dyn FnMut(HWND) -> bool, [u16; 256]);
 
@@ -127,16 +127,16 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
 }
 
 // EnumWindows 的回调函数
-unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
+extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     let callback = unsafe { &mut *(lparam.0 as *mut Callback) };
     let class_name = &mut callback.2;
-    let len = GetClassNameW(hwnd, class_name);
+    let len = unsafe { GetClassNameW(hwnd, class_name) };
     // 过滤不可见窗口和跳过窗口
     if hwnd != callback.0
         && unsafe { IsWindowVisible(hwnd).as_bool() && !IsIconic(hwnd).as_bool() }
         && String::from_utf16_lossy(&class_name[..len as usize]) != "Windows.UI.Core.CoreWindow"
     {
-        let _ = EnumChildWindows(Some(hwnd), Some(enum_windows_callback), lparam);
+        let _ = unsafe { EnumChildWindows(Some(hwnd), Some(enum_windows_callback), lparam) };
         BOOL::from(callback.1(hwnd))
     } else {
         BOOL::from(true)

@@ -1,4 +1,4 @@
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 #[cfg(not(debug_assertions))]
 use capture::CaptureService;
 use sider_local_ai::{
@@ -12,14 +12,13 @@ use crate::windows::image_clipboard;
 
 pub mod capture;
 
-#[derive(Clone)]
 pub struct LocalServe {
     config: ServeConfig,
 }
 
 impl Default for LocalServe {
     fn default() -> Self {
-        let config = ServeConfig::load("./Config.toml").unwrap_or_else(|_| ServeConfig {
+        let mut config = ServeConfig::load("./Config.toml").unwrap_or_else(|_| ServeConfig {
             port: std::net::TcpListener::bind("127.0.0.1:0")
                 .unwrap()
                 .local_addr()
@@ -27,6 +26,23 @@ impl Default for LocalServe {
                 .port(),
             ..Default::default()
         });
+        let mut args = std::env::args();
+        let ports = args.next().and_then(|arg| {
+            if arg.contains("sider") {
+                args.next()
+            } else {
+                Some(arg)
+            }
+        });
+        if let Some(ports) = ports {
+            let ports = ports.split(":").collect::<Vec<_>>();
+            if ports.len() >= 2 {
+                if let (Ok(rpc_port), Ok(dst_port)) = (ports[0].parse(), ports[1].parse()) {
+                    config.rpc_port = rpc_port;
+                    config.rpc_dst_port = dst_port;
+                }
+            }
+        }
         Self { config }
     }
 }
@@ -34,13 +50,13 @@ impl Default for LocalServe {
 impl LocalServe {
     #[cfg(not(debug_assertions))]
     pub fn local_serve_run(self, screenshot_window: WebviewWindow) -> Self {
-        let this = self.clone();
+        let local_serve = sider_local_ai::LocalAppServe::new(self.config.clone());
         std::thread::spawn(move || {
             tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()
                 .unwrap()
-                .block_on(this.run(screenshot_window))
+                .block_on(Self::run(local_serve, screenshot_window))
                 .expect("local serve run error");
         });
         self
@@ -52,14 +68,16 @@ impl LocalServe {
     }
 
     #[cfg(not(debug_assertions))]
-    async fn run(self, screenshot_window: WebviewWindow) -> std::io::Result<()> {
+    async fn run(
+        local_serve: sider_local_ai::LocalAppServe,
+        screenshot_window: WebviewWindow,
+    ) -> std::io::Result<()> {
         use sider_local_ai::sider_rpc::{
             client::screen_capture_action_server::ScreenCaptureActionServer, tonic::service::Routes,
         };
         let screen_capture_action_server =
             ScreenCaptureActionServer::new(CaptureService::new(screenshot_window));
-        let serve = sider_local_ai::LocalAppServe::new(self.config)
-            .routes(Routes::new(screen_capture_action_server));
+        let serve = local_serve.routes(Routes::new(screen_capture_action_server));
 
         serve.run().await?;
 
