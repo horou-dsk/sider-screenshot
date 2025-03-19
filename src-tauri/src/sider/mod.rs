@@ -1,6 +1,7 @@
 use base64::{Engine as _, engine::general_purpose};
 #[cfg(not(debug_assertions))]
 use capture::CaptureService;
+use clap::Parser;
 use sider_local_ai::{
     config::Config as ServeConfig,
     sider_rpc::did_capture,
@@ -11,6 +12,17 @@ use tauri::{Manager as _, WebviewWindow};
 use crate::windows::image_clipboard;
 
 pub mod capture;
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+pub struct Cli {
+    #[arg(short, long)]
+    rpc_port: Option<u16>,
+    #[arg(short, long)]
+    dst_rpc_port: Option<u16>,
+    #[arg(short, long, default_value_t = true)]
+    marking_words: bool,
+}
 
 pub struct LocalServe {
     config: ServeConfig,
@@ -26,23 +38,14 @@ impl Default for LocalServe {
                 .port(),
             ..Default::default()
         });
-        let mut args = std::env::args();
-        let ports = args.next().and_then(|arg| {
-            if arg.contains("sider") {
-                args.next()
-            } else {
-                Some(arg)
-            }
-        });
-        if let Some(ports) = ports {
-            let ports = ports.split(":").collect::<Vec<_>>();
-            if ports.len() >= 2 {
-                if let (Ok(rpc_port), Ok(dst_port)) = (ports[0].parse(), ports[1].parse()) {
-                    config.rpc_port = rpc_port;
-                    config.rpc_dst_port = dst_port;
-                }
-            }
+        let cli = Cli::parse();
+        if let Some(rpc_port) = cli.rpc_port {
+            config.rpc_port = rpc_port;
         }
+        if let Some(dst_rpc_port) = cli.dst_rpc_port {
+            config.rpc_dst_port = dst_rpc_port;
+        }
+        config.marking_words = cli.marking_words;
         Self { config }
     }
 }
