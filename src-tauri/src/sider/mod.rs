@@ -1,6 +1,7 @@
 use base64::{Engine as _, engine::general_purpose};
 #[cfg(not(debug_assertions))]
 use capture::CaptureService;
+#[cfg(not(debug_assertions))]
 use clap::Parser;
 use sider_local_ai::{
     config::Config as ServeConfig,
@@ -13,6 +14,7 @@ use crate::windows::image_clipboard;
 
 pub mod capture;
 
+#[cfg(not(debug_assertions))]
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
@@ -29,23 +31,26 @@ pub struct LocalServe {
 }
 
 impl Default for LocalServe {
+    #[cfg(debug_assertions)]
     fn default() -> Self {
-        let mut config = ServeConfig::load("./Config.toml").unwrap_or_else(|_| ServeConfig {
+        let config = ServeConfig::load("./Config.toml").unwrap_or_default();
+        Self { config }
+    }
+
+    #[cfg(not(debug_assertions))]
+    fn default() -> Self {
+        let cli = Cli::parse();
+        let config = ServeConfig::load("./Config.toml").unwrap_or_else(|_| ServeConfig {
             port: std::net::TcpListener::bind("127.0.0.1:0")
                 .unwrap()
                 .local_addr()
                 .unwrap()
                 .port(),
+            rpc_port: cli.rpc_port.unwrap_or(0),
+            rpc_dst_port: cli.dst_rpc_port.unwrap_or(0),
+            marking_words: cli.marking_words,
             ..Default::default()
         });
-        let cli = Cli::parse();
-        if let Some(rpc_port) = cli.rpc_port {
-            config.rpc_port = rpc_port;
-        }
-        if let Some(dst_rpc_port) = cli.dst_rpc_port {
-            config.rpc_dst_port = dst_rpc_port;
-        }
-        config.marking_words = cli.marking_words;
         Self { config }
     }
 }

@@ -3,8 +3,8 @@
 use std::io::Write as _;
 
 use serde::Serialize;
-use sider::{capture::screen_capture, send_capture, LocalServe};
-use sider_local_ai::tracing::error;
+use sider::{LocalServe, capture::screen_capture, send_capture};
+use sider_local_ai::{get_application_data_path, tracing::error};
 use tauri::Manager;
 use windows::{set_visible_window, set_window_style};
 
@@ -45,33 +45,12 @@ async fn get_local_serve_port(app: tauri::AppHandle) -> tauri::Result<u16> {
     Ok(local_serve.port())
 }
 
-// #[tauri::command]
-// fn image_to_clipboard(image: Vec<u8>, _width: u32, _height: u32) {
-//     // let mut file = File::create("test.png").unwrap();
-//     // file.write_all(&image).unwrap();
-//     let png_image = image::load_from_memory(&image).unwrap();
-//     let img = gen_from_img(&png_image);
-//     // if let Err(err) = set_image_to_clipboard(bytes, width, height) {
-//     //     println!("Error: {}", err);
-//     // }
-//     // let mut w = std::io::Cursor::new(Vec::new());
-//     // png_image.write_to(&mut w, image::ImageFormat::Bmp).unwrap();
-//     // if let Err(err) = set_clipboard(clipboard_win::formats::Bitmap, img) {
-//     //     println!("Error: {}", err);
-//     // }
-//     // if let Err(err) = clipboard.set_image(ImageData {
-//     //     width,
-//     //     height,
-//     //     bytes: Cow::Owned(rgba_image.to_vec()),
-//     // }) {
-//     //     println!("Error: {}", err);
-//     // }
-// }
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // 判断应用是否已经运行
-    if let Ok(port) = std::fs::read_to_string("./sider_ai.lock").and_then(|text| {
+    let sider_lock_file = get_application_data_path().join("sider_ai.lock");
+    #[cfg(not(debug_assertions))]
+    if let Ok(port) = std::fs::read_to_string(&sider_lock_file).and_then(|text| {
         text.parse::<u16>()
             .map_err(|_| std::io::Error::other("Parse error"))
     }) {
@@ -81,6 +60,7 @@ pub fn run() {
             return;
         }
     }
+    let local_serve = LocalServe::default();
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -94,11 +74,10 @@ pub fn run() {
         .setup(|app| {
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
-            let local_serve = LocalServe::default().local_serve_run(screenshot_window);
-            if let Ok(mut f) = std::fs::File::create("./sider_ai.lock") {
+            if let Ok(mut f) = std::fs::File::create(sider_lock_file) {
                 let _ = f.write_all(local_serve.port().to_string().as_bytes());
             }
-            app.manage(local_serve);
+            app.manage(local_serve.local_serve_run(screenshot_window));
             if let Err(err) = quick_search::init_window(app) {
                 error!("init quick search window error: {}", err);
             }
@@ -106,5 +85,5 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-    let _ = std::fs::remove_file("./sider_ai.lock");
+    let _ = std::fs::remove_file(get_application_data_path().join("sider_ai.lock"));
 }

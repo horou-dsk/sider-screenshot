@@ -111,7 +111,7 @@ function QuickStart() {
 									runApp(item.id);
 									setSearchText("");
 								}}
-								className="w-[80px] h-[88px] rounded-md hover:bg-[rgb(87,87,87)] flex flex-col items-center py-2 px-1 cursor-pointer"
+								className="w-[80px] h-[88px] rounded-md hover:bg-gray-300 dark:hover:bg-[rgb(87,87,87)] flex flex-col items-center py-2 px-1 cursor-pointer"
 							>
 								<img
 									className="object-contain w-8 h-8"

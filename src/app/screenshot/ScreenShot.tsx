@@ -339,7 +339,7 @@ function ScreenShot() {
 						{/* 裁剪大小 */}
 						<div
 							className={classNames(
-								"text-sm absolute left-2 bg-gray-800 rounded-md h-6 px-4 flex items-center whitespace-nowrap z-10",
+								"text-sm absolute left-2 bg-gray-800 rounded-md h-6 px-4 flex items-center whitespace-nowrap z-10 light text-gray-100",
 								{
 									"-top-8": cropRect.y > 40,
 									"top-2": cropRect.y <= 40,

@@ -4,6 +4,7 @@ import { chat, embedding_with_file, vector_search } from "../../api";
 import { useState } from "react";
 import classnames from "classnames";
 import MarkDownRender from "../../components/MarkDownRender/MarkDownRender";
+import { Checkbox } from "antd";
 
 function prompt(context: string) {
 	return `# Role: 知识库专家。
@@ -122,13 +123,7 @@ function Root() {
 					/>
 					<div className="flex justify-end gap-2 mb-2">
 						<div className="flex items-center gap-1">
-							<input
-								type="checkbox"
-								className="checkbox checkbox-primary"
-								id="checkboxPrimary"
-								checked={rag}
-								onChange={(e) => setRag(e.currentTarget.checked)}
-							/>
+							<Checkbox id="checkboxPrimary" value={rag} onChange={e => setRag(e.target.value)}/>
 							<label
 								className="label label-text text-base"
 								htmlFor="checkboxPrimary"

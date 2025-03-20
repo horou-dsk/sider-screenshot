@@ -1,12 +1,12 @@
 import { defineConfig } from "vite";
-import tailwindcss from "tailwindcss";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
-export default defineConfig(async ({ mode }) => ({
-	plugins: [react()],
+export default defineConfig(async ({ }) => ({
+	plugins: [react(), tailwindcss()],
 
 	// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
 	//
@@ -29,15 +29,15 @@ export default defineConfig(async ({ mode }) => ({
 			ignored: ["**/src-tauri/**"],
 		},
 	},
-	css: {
-		postcss: {
-			plugins: [
-				tailwindcss({
-					config: "./tailwind.config.ts",
-				}),
-			],
-		},
-	},
+	// css: {
+	// 	postcss: {
+	// 		plugins: [
+	// 			tailwindcss({
+	// 				config: "./tailwind.config.ts",
+	// 			}),
+	// 		],
+	// 	},
+	// },
 	// optimizeDeps: {
 	//   include: ["solid-markdown > micromark", "solid-markdown > unified"],
 	// },

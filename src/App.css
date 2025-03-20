@@ -15,6 +15,10 @@
 
   background-color: rgba(0, 0, 0, 0);
 }
+
+button {
+  cursor: pointer;
+}
 /* :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -82,10 +86,6 @@ button {
   background-color: #ffffff;
   transition: border-color 0.25s;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
 }
 
 button:hover {
