@@ -1,6 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
-use std::io::Write as _;
+use std::fs::File;
 
 use serde::Serialize;
 use sider::{LocalServe, capture::screen_capture, send_capture};
@@ -49,16 +49,20 @@ async fn get_local_serve_port(app: tauri::AppHandle) -> tauri::Result<u16> {
 pub fn run() {
     // 判断应用是否已经运行
     let sider_lock_file = get_application_data_path().join("sider_ai.lock");
-    #[cfg(not(debug_assertions))]
-    if let Ok(port) = std::fs::read_to_string(&sider_lock_file).and_then(|text| {
-        text.parse::<u16>()
-            .map_err(|_| std::io::Error::other("Parse error"))
-    }) {
-        let stream = std::net::TcpStream::connect(("127.0.0.1", port));
-        if stream.is_ok() {
-            eprintln!("sider_ai is running");
-            return;
+    let f = if sider_lock_file.exists() {
+        match File::open(&sider_lock_file) {
+            Ok(f) => f,
+            Err(_) => {
+                eprintln!("sider ai is running");
+                return;
+            }
         }
+    } else {
+        File::create(&sider_lock_file).expect("create sider ai lock file error")
+    };
+    if !f.try_lock().unwrap_or(false) {
+        eprintln!("sider ai is running");
+        return;
     }
     let local_serve = LocalServe::default();
     tauri::Builder::default()
@@ -74,9 +78,6 @@ pub fn run() {
         .setup(|app| {
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
-            if let Ok(mut f) = std::fs::File::create(sider_lock_file) {
-                let _ = f.write_all(local_serve.port().to_string().as_bytes());
-            }
             app.manage(local_serve.local_serve_run(screenshot_window));
             if let Err(err) = quick_search::init_window(app) {
                 error!("init quick search window error: {}", err);
@@ -85,5 +86,6 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-    let _ = std::fs::remove_file(get_application_data_path().join("sider_ai.lock"));
+    drop(f);
+    let _ = std::fs::remove_file(sider_lock_file);
 }

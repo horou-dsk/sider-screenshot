@@ -5883,6 +5883,7 @@ dependencies = [
  "tracing-panic",
  "tracing-subscriber",
  "uuid",
+ "windows 0.60.0",
  "xcap",
 ]
 
