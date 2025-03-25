@@ -60,11 +60,7 @@ impl LocalServe {
     pub fn local_serve_run(self, screenshot_window: WebviewWindow) -> Self {
         let local_serve = sider_local_ai::LocalAppServe::new(self.config.clone());
         std::thread::spawn(move || {
-            tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .unwrap()
-                .block_on(Self::run(local_serve, screenshot_window))
+            tauri::async_runtime::block_on(Self::run(local_serve, screenshot_window))
                 .expect("local serve run error");
         });
         self

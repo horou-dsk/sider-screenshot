@@ -23,7 +23,7 @@ export async function base_api(): Promise<string> {
 export type RequestConfig = RequestInit & {
 	params?: Record<string, any>;
 	responseType?: "arraybuffer";
-	baseURL?: string;
+	baseURL?: string | (() => Promise<string>);
 	// TODO: 还未实现超时时间
 	timeout?: number;
 	onDownloadProgress?: (total: number, loaded: number) => void;
@@ -153,7 +153,9 @@ export class HyperRequest {
 		if (method === "POST" && data) {
 			init.body = isFormData ? data : JSON.stringify(data);
 		}
-		const baseURL = await base_api();
+		const baseURL = await (typeof requestConfig.baseURL === "function"
+			? requestConfig.baseURL()
+			: Promise.resolve(requestConfig.baseURL));
 		const res = await Promise.race([
 			fetch(baseURL + url_path, init),
 			new Promise<Response>((resolve) =>
@@ -241,7 +243,7 @@ export function toastFail(err: RequestError) {
 }
 
 const request = new HyperRequest({
-	baseURL: "",
+	baseURL: base_api,
 	//   headers: DEFAULT_HEADERS,
 	timeout: 60000 * 10,
 	//   getToken: typeof window !== "undefined" ? () => getAuthToken() : () => getAuthTokenCookie()
