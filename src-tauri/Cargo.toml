@@ -28,7 +28,10 @@ sider-local-ai = { path = "C:/Users/xly_t/Krysha/Code/Projects/Sider/sider-local
 xcap = "0.4"
 clipboard-win = "5.4.0"
 # clipboard-rs = { git = "https://github.com/ChurchTao/clipboard-rs.git", branch = "fix/win/image" }
-image = "0.25"
+image = { version = "0.25", default-features = false, features = [
+    "bmp",
+    "png",
+] }
 anyhow = "1"
 base64 = "0.22"
 tauri-plugin-dialog = "2"
