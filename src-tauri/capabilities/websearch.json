@@ -1,0 +1,26 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "websearch",
+  "windows": ["*"],
+  "remote": {
+    "urls": [
+      "https://www.google.com",
+      "https://www.baidu.com",
+      "https://www.sogou.com",
+      "https://www.bing.com",
+      "https://www.google-scholar.com",
+      "https://xueshu.baidu.com",
+      "https://duckduckgo.com"
+    ]
+  },
+  "platforms": ["linux", "macOS", "windows"],
+  "permissions": [
+    "core:event:allow-emit",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "web-search:allow-create-search-window",
+    "web-search:allow-load-url",
+    "web-search:allow-remove-search-window",
+    "web-search:allow-eval-js"
+  ]
+}

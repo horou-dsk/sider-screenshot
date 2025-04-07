@@ -6043,6 +6043,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-global-shortcut",
  "tauri-plugin-opener",
+ "tauri-plugin-web-search",
  "tokio",
  "windows 0.60.0",
  "xcap",
@@ -6853,6 +6854,18 @@ dependencies = [
  "url",
  "windows 0.60.0",
  "zbus",
+]
+
+[[package]]
+name = "tauri-plugin-web-search"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.12",
+ "tracing",
 ]
 
 [[package]]

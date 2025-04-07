@@ -6,9 +6,10 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "vite build",
+    "build": "pnpm -r --parallel build && vite build",
     "serve": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:plugin": "pnpm -r --parallel build"
   },
   "license": "MIT",
   "dependencies": {

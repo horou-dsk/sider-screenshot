@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-create-search-window"
+description = "Enables the create_search_window command without any pre-configured scope."
+commands.allow = ["create_search_window"]
+
+[[permission]]
+identifier = "deny-create-search-window"
+description = "Denies the create_search_window command without any pre-configured scope."
+commands.deny = ["create_search_window"]
