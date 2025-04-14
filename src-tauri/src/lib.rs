@@ -1,5 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-
+#![feature(file_lock)]
 use std::fs::File;
 
 use serde::Serialize;

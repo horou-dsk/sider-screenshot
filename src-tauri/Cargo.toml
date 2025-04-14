@@ -70,10 +70,10 @@ name = "enum_windows_benchmark"
 harness = false
 
 [profile.release]
-# lto = true
-# codegen-units = 1
-# opt-level = "s"
-# strip = true
+lto = true
+codegen-units = 1
+opt-level = "s"
+strip = true
 # panic = "abort"
 
 # [profile.release.package.wry]
