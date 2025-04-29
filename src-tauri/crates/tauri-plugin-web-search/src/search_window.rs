@@ -3,7 +3,7 @@ use std::{
     sync::{atomic::AtomicU16, Arc, RwLock},
 };
 
-use tauri::{AppHandle, Listener, Runtime, WindowEvent};
+use tauri::{AppHandle, Runtime};
 
 #[derive(Clone)]
 pub struct SearchWindowManager<R: Runtime> {
@@ -25,7 +25,7 @@ impl<R: Runtime> SearchWindowManager<R> {
         let id = self
             .id_counter
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let label = format!("web_search_{}", id);
+        let label = format!("web_search_{id}");
         let window = tauri::WebviewWindowBuilder::new(
             app_handle,
             &label,

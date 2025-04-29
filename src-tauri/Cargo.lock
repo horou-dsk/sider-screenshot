@@ -5266,6 +5266,7 @@ dependencies = [
  "js-sys",
  "log",
  "mime",
+ "mime_guess",
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
@@ -5543,6 +5544,7 @@ dependencies = [
  "integer-encoding",
  "rand 0.8.5",
  "snap",
+ "tokio",
 ]
 
 [[package]]
@@ -6028,6 +6030,7 @@ dependencies = [
  "input-listen",
  "lite-db",
  "marking-words",
+ "md-5",
  "quick-search",
  "rayon",
  "reqwest",
@@ -6073,10 +6076,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "dirs",
+ "lite-db",
+ "md-5",
  "reqwest",
  "rusty-leveldb",
  "serde",
  "serde_json",
+ "sider-constant",
  "tokio",
  "tracing",
 ]
