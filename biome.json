@@ -30,7 +30,9 @@
             },
             "suspicious": {
                 "noExplicitAny": "off",
-                "noArrayIndexKey": "off"
+                "noArrayIndexKey": "off",
+				"noControlCharactersInRegex": "off",
+				"noAssignInExpressions": "off"
             },
 			"nursery": {
 				
