@@ -1,8 +1,19 @@
+param (
+    [switch]$Prod
+)
 pnpm build
 Push-Location .\src-tauri
 $fileContent = Get-Content -Path "tauri.conf.prod.json" -Raw
 $env:TAURI_CONFIG = $fileContent
-cargo build --release --features "tauri/custom-protocol"
+# 判断参数是否包含 --release
+if ($Prod) {
+    Write-Output "Prod Env"
+    cargo build --release --features "tauri/custom-protocol"
+} else {
+    Write-Output "Test Env"
+    $env:RUSTFLAGS="--cfg sider_test";
+    cargo build --release --features "tauri/custom-protocol"
+}
 $env:TAURI_CONFIG = $null
 Pop-Location
 
