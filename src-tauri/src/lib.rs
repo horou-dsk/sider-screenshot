@@ -3,7 +3,7 @@
 use std::fs::File;
 
 use serde::Serialize;
-use sider::{LocalServe, capture::screen_capture, send_capture};
+use sider::{LocalServe, capture::screen_capture};
 use sider_local_ai::{get_application_data_path, tracing::error};
 use tauri::Manager;
 use windows::{set_visible_window, set_window_style};
@@ -33,9 +33,9 @@ fn hide_window(window: tauri::Window) -> tauri::Result<()> {
 }
 
 #[tauri::command]
-async fn capture_screen(app: tauri::AppHandle) -> tauri::Result<()> {
+fn capture_screen(app: tauri::AppHandle) -> tauri::Result<()> {
     let screenshot_window = app.get_webview_window("screenshot").unwrap();
-    screen_capture(&screenshot_window).await?;
+    screen_capture(&screenshot_window)?;
     Ok(())
 }
 
@@ -73,7 +73,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             hide_window,
             capture_screen,
-            send_capture,
+            sider::command::send_capture,
+            sider::command::cancel_capture,
             get_local_serve_port,
         ])
         .setup(|app| {

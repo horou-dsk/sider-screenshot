@@ -188,8 +188,11 @@ function ScreenShot() {
 		};
 	}, [handleCropMove, handleCropSelection, handleSelectWindow, down, cropRect]);
 
-	const hide = useCallback(() => {
+	const hide = useCallback((cancel = true) => {
 		invoke("hide_window");
+		if (cancel) {
+			invoke("cancel_capture");
+		}
 		setScreenShots([]);
 		setImageLoadedIndex(0);
 		setCropRect({ x: 0, y: 0, width: 0, height: 0 });
@@ -379,7 +382,7 @@ function ScreenShot() {
 											// ]);
 											console.log("保存成功");
 										}
-										hide();
+										hide(false);
 										save();
 									}}
 								/>

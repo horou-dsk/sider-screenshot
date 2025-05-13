@@ -4,3 +4,4 @@ dist
 .env*
 src-tauri/Config.toml
 .vscode
+/tmp

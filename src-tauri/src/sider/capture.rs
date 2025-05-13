@@ -2,14 +2,14 @@ use serde_json::json;
 use sider_local_ai::{
     reqwest,
     sider_rpc::client::{
-        screen_capture_action_server::ScreenCaptureAction, GrpcEmptyMessage as Empty,
+        GrpcEmptyMessage as Empty, screen_capture_action_server::ScreenCaptureAction,
     },
     sider_rpc::tonic::{self, Request, Response},
     tracing::error,
 };
 use tauri::{Emitter, WebviewWindow};
 
-use crate::{enum_windows, local_url, windows::set_window_size, MonitorInfo};
+use crate::{MonitorInfo, enum_windows, local_url, windows::set_window_size};
 
 pub struct CaptureService {
     screenshot_window: WebviewWindow,
@@ -40,8 +40,13 @@ impl ScreenCaptureAction for CaptureService {
         {
             error!("Failed to capture screenshot: {}", err);
         };
-        screen_capture(&self.screenshot_window).await.unwrap();
-        Ok(Response::new(Empty::default()))
+        match screen_capture(&self.screenshot_window) {
+            Ok(_) => Ok(Response::new(Empty::default())),
+            Err(err) => {
+                error!("Failed to capture screenshot: {}", err);
+                Err(tonic::Status::internal(err.to_string()))
+            }
+        }
     }
 
     async fn ping_toolkit(&self, _: Request<Empty>) -> Result<Response<Empty>, tonic::Status> {
@@ -49,7 +54,7 @@ impl ScreenCaptureAction for CaptureService {
     }
 }
 
-pub async fn screen_capture(screenshot_window: &WebviewWindow) -> anyhow::Result<()> {
+pub fn screen_capture(screenshot_window: &WebviewWindow) -> anyhow::Result<()> {
     let hwnd = screenshot_window.hwnd()?;
     let window_info = enum_windows::get_foreground_window_info(hwnd);
     let monitor_info = xcap::Monitor::all()?;
