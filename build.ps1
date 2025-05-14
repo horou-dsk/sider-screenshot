@@ -8,10 +8,10 @@ $env:TAURI_CONFIG = $fileContent
 # 判断参数是否包含 --release
 if ($Prod) {
     Write-Output "Prod Env"
+    $env:RUSTFLAGS="--cfg sider_prod";
     cargo build --release --features "tauri/custom-protocol"
 } else {
     Write-Output "Test Env"
-    $env:RUSTFLAGS="--cfg sider_test";
     cargo build --release --features "tauri/custom-protocol"
 }
 $env:TAURI_CONFIG = $null

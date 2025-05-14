@@ -22,7 +22,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "time", "macros"] }
-tauri = { version = "2.3", features = [] }
+tauri = { version = "2.5", features = [] }
 tauri-plugin-opener = "2.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -40,12 +40,13 @@ base64 = "0.22"
 tauri-plugin-dialog = "2"
 clap = { version = "4.5", features = ["derive"] }
 tauri-plugin-web-search = { path = "./crates/tauri-plugin-web-search" }
+tracing = "0.1"
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-global-shortcut = "2.0.0"
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.60", features = [
+windows = { version = "0.61", features = [
     "Win32_System_Com",
     "Win32_UI_Accessibility",
     "Win32_UI_WindowsAndMessaging",
@@ -76,6 +77,7 @@ opt-level = "s"
 strip = true
 # panic = "abort"
 
-# [profile.release.package.wry]
-# debug = true
-# debug-assertions = true
+# release 模式下, wry 的 debug 模式, 可以打开 devtools, 方便调试
+[profile.release.package.wry]
+debug = true
+debug-assertions = true

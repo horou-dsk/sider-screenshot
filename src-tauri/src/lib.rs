@@ -4,11 +4,11 @@ use std::fs::File;
 
 use serde::Serialize;
 use sider::{LocalServe, capture::screen_capture};
-use sider_local_ai::{get_application_data_path, tracing::error};
+use sider_local_ai::get_application_data_path;
 use tauri::Manager;
 use windows::{set_visible_window, set_window_style};
 
-mod contant;
+mod constant;
 pub mod enum_windows;
 mod quick_search;
 mod sider;
@@ -82,7 +82,7 @@ pub fn run() {
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
             app.manage(local_serve.local_serve_run(screenshot_window));
             if let Err(err) = quick_search::init_window(app) {
-                error!("init quick search window error: {}", err);
+                tracing::error!("init quick search window error: {}", err);
             }
             Ok(())
         })

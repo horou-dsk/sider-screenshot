@@ -1,14 +1,13 @@
 use base64::{Engine as _, engine::general_purpose};
-#[cfg(not(debug_assertions))]
 use capture::CaptureService;
-#[cfg(not(debug_assertions))]
 use clap::Parser;
 use sider_local_ai::{config::Config as ServeConfig, sider_rpc::did_capture};
 use tauri::WebviewWindow;
 
+use crate::constant;
+
 pub mod capture;
 
-#[cfg(not(debug_assertions))]
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
@@ -25,13 +24,6 @@ pub struct LocalServe {
 }
 
 impl Default for LocalServe {
-    #[cfg(debug_assertions)]
-    fn default() -> Self {
-        let config = ServeConfig::load("./Config.toml").unwrap_or_default();
-        Self { config }
-    }
-
-    #[cfg(not(debug_assertions))]
     fn default() -> Self {
         let cli = Cli::parse();
         let config = ServeConfig::load("./Config.toml").unwrap_or_else(|_| ServeConfig {
@@ -45,12 +37,14 @@ impl Default for LocalServe {
             marking_words: cli.marking_words,
             ..Default::default()
         });
+        unsafe {
+            constant::LOCAL_SERVER_PORT = config.port;
+        }
         Self { config }
     }
 }
 
 impl LocalServe {
-    #[cfg(not(debug_assertions))]
     pub fn local_serve_run(self, screenshot_window: WebviewWindow) -> Self {
         let local_serve = sider_local_ai::LocalAppServe::new(self.config.clone());
         std::thread::spawn(move || {
@@ -60,12 +54,6 @@ impl LocalServe {
         self
     }
 
-    #[cfg(debug_assertions)]
-    pub fn local_serve_run(self, _screenshot_window: WebviewWindow) -> Self {
-        self
-    }
-
-    #[cfg(not(debug_assertions))]
     async fn run(
         local_serve: sider_local_ai::LocalAppServe,
         screenshot_window: WebviewWindow,
