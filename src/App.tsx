@@ -1,5 +1,6 @@
 import "./App.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ConfigProvider } from "antd";
 import { lazy } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
 
@@ -23,7 +24,9 @@ const routes = createBrowserRouter([
 function App() {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<RouterProvider router={routes} />
+			<ConfigProvider>
+				<RouterProvider router={routes} />
+			</ConfigProvider>
 		</QueryClientProvider>
 	);
 }

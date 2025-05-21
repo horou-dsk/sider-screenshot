@@ -2948,7 +2948,7 @@ dependencies = [
  "crossbeam-channel",
  "rayon",
  "tracing",
- "windows 0.60.0",
+ "windows 0.61.1",
 ]
 
 [[package]]
@@ -3399,7 +3399,7 @@ dependencies = [
  "input-listen",
  "rayon",
  "tracing",
- "windows 0.60.0",
+ "windows 0.61.1",
 ]
 
 [[package]]
@@ -4862,7 +4862,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
- "windows 0.60.0",
+ "windows 0.61.1",
 ]
 
 [[package]]

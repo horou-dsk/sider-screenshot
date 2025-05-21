@@ -1,23 +1,23 @@
 .logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+	filter: drop-shadow(0 0 2em #747bff);
 }
 
 .logo.solid:hover {
-  filter: drop-shadow(0 0 2em #2f5d90);
+	filter: drop-shadow(0 0 2em #2f5d90);
 }
 
 :root {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
+	font-size: 16px;
+	line-height: 24px;
+	font-weight: 400;
 
-  color: #0f0f0f;
+	color: #0f0f0f;
 
-  background-color: rgba(0, 0, 0, 0);
+	background-color: rgba(0, 0, 0, 0);
 }
 
 button {
-  cursor: pointer;
+	cursor: pointer;
 }
 /* :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
@@ -126,7 +126,7 @@ button {
 } */
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-  }
+	:root {
+		color: #f6f6f6;
+	}
 }

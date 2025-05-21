@@ -7,7 +7,7 @@ type Props = {
 
 function ScreenShotToolbar(props: Props) {
 	return (
-		<div className="dark:bg-[#333] bg-white rounded-md h-10">
+		<div className="dark:bg-[#333] bg-white rounded-md h-10 shadow-md border border-gray-200 dark:border-none">
 			<div className="flex justify-between items-center h-full text-xl">
 				<button
 					type="button"
