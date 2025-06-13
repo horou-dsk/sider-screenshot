@@ -35,6 +35,7 @@
     "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@react-router/dev": "^7.3.0",
     "@tailwindcss/vite": "^4.0.14",
     "@tauri-apps/cli": "^2",

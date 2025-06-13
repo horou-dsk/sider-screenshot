@@ -1,11 +1,11 @@
-import { MonitorInfo } from "../types";
+import type { MonitorInfo } from "../types";
 
 export type ScreenShotImage = {
-  monitorInfo: MonitorInfo;
-  screenshotUrl: string;
+	monitorInfo: MonitorInfo;
+	screenshotUrl: string;
 };
 
 export type CanvasRenderImage = {
-  monitorInfo: MonitorInfo;
-  image: HTMLImageElement;
+	monitorInfo: MonitorInfo;
+	image: HTMLImageElement;
 };

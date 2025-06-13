@@ -1,44 +1,62 @@
+use std::os::raw::c_void;
+
 use serde::Serialize;
 use sider_local_ai::tracing::info;
 use windows::Win32::Foundation::{HWND, LPARAM, RECT};
+use windows::Win32::Graphics::Dwm::{
+    DWMWA_CLOAKED, DWMWA_EXTENDED_FRAME_BOUNDS, DwmGetWindowAttribute,
+};
 use windows::Win32::UI::WindowsAndMessaging::{
-    EnumChildWindows, EnumWindows, GetClassNameW, GetWindowRect, GetWindowTextW, IsIconic,
-    IsWindowVisible,
+    EnumChildWindows, EnumWindows, GWL_EXSTYLE, GWL_STYLE, GetClassNameW, GetWindowLongPtrW,
+    GetWindowRect, GetWindowTextW, IsIconic, IsWindowVisible, WS_CHILD, WS_EX_TOOLWINDOW,
 };
 use windows::core::BOOL;
 
 struct Callback<'a>(HWND, &'a mut dyn FnMut(HWND) -> bool, [u16; 256]);
 
-// fn is_filter_window(hwnd: HWND) -> bool {
-//     unsafe {
-//         let dw_process_id = GetCurrentProcessId();
+type Dword = u32;
 
-//         if hwnd != HWND(null_mut()) && IsWindow(hwnd).as_bool() {
-//             let dw_window_process_id = GetWindowThreadProcessId(hwnd, None);
-//             if dw_window_process_id == dw_process_id {
-//                 return true;
-//             }
-//         }
-//     }
-//     false
-// }
+fn is_window_cloaked(handle: HWND) -> bool {
+    let cloaked: Dword = 0;
+    let res = unsafe {
+        DwmGetWindowAttribute(
+            handle,
+            DWMWA_CLOAKED,
+            cloaked as *mut c_void,
+            size_of::<Dword>() as u32,
+        )
+    };
 
-// fn should_win_be_filtered(hwnd: HWND) -> bool {
-//     // if is_filter_window(hwnd) {
-//     //     return true;
-//     // }
-//     unsafe {
-//         let dw_style = GetWindowLongW(hwnd, GWL_STYLE);
-//         let dw_style_must = WS_VISIBLE;
-//         if (dw_style & dw_style_must.0 as i32) != dw_style_must.0 as i32 {
-//             return true;
-//         }
+    res.is_ok() && cloaked != 0
+}
 
-//         let dw_ex_style = GetWindowLongW(hwnd, GWL_EXSTYLE);
-//         let dw_ex_style_must = WS_EX_TRANSPARENT;
-//         (dw_ex_style & dw_ex_style_must.0 as i32) != 0
-//     }
-// }
+fn is_window_valid(hwnd: HWND) -> bool {
+    let is_visible = unsafe { IsWindowVisible(hwnd) };
+    if !is_visible.as_bool() {
+        return false;
+    }
+    let is_minimized = unsafe { IsIconic(hwnd).as_bool() } || is_window_cloaked(hwnd);
+    if is_minimized {
+        return false;
+    }
+
+    let styles;
+    let ex_styles;
+
+    unsafe {
+        styles = GetWindowLongPtrW(hwnd, GWL_STYLE) as Dword;
+        ex_styles = GetWindowLongPtrW(hwnd, GWL_EXSTYLE) as Dword;
+    }
+
+    if ex_styles & WS_EX_TOOLWINDOW.0 > 0 {
+        return true;
+    }
+    if styles & WS_CHILD.0 > 0 {
+        // return false;
+        return true;
+    }
+    true
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct WindowInfo {
@@ -66,6 +84,11 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
     let min_x = displays.iter().map(|info| info.x().unwrap()).min().unwrap();
     let min_y = displays.iter().map(|info| info.y().unwrap()).min().unwrap();
 
+    info!(
+        "max_width: {}, max_height: {}, min_x: {}, min_y: {}",
+        max_width, max_height, min_x, min_y
+    );
+
     let mut windows_info = vec![];
     let mut title = [0u16; 256];
 
@@ -77,22 +100,32 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
 
         // 获取窗口位置和大小
         let mut rect = RECT::default();
-        if unsafe { GetWindowRect(hwnd, &mut rect).is_ok() } {
+        // 为什么使用 DwmGetWindowAttribute 而不是 GetWindowRect
+        // 因为 GetWindowRect 获取的窗口大小会包含窗口的边框以及阴影效果
+        // 而 DwmGetWindowAttribute 获取的大小更接近真实肉眼看到的窗口大小
+        if unsafe {
+            DwmGetWindowAttribute(
+                hwnd,
+                DWMWA_EXTENDED_FRAME_BOUNDS,
+                &mut rect as *mut _ as *mut c_void,
+                size_of::<RECT>() as u32,
+            )
+            .is_ok()
+                || GetWindowRect(hwnd, &mut rect).is_ok()
+        } {
             let title_str = String::from_utf16_lossy(title);
-            if rect.left < -max_width || rect.top < -max_width {
+            let left = rect.left - min_x;
+            let top = rect.top - min_y;
+            let width = rect.right - rect.left;
+            let height = rect.bottom - rect.top;
+            // 如果窗口太小，则跳过
+            if width < 25 || height < 25 {
                 return true;
             }
-            // 饱和运算，如果为负数，则为零
-            let left = rect.left.saturating_sub(min_x);
-            let top = rect.top.saturating_sub(min_y);
-            let right = rect.right.min(max_width);
-            let bottom = rect.bottom.min(max_height);
-            let width = (right - min_x) - left;
-            let height = (bottom - min_y) - top;
-            // 如果窗口太小或太大，则跳过
-            if width < 25 || height < 25 || height > max_height || width > max_width {
-                return true;
-            }
+            // info!(
+            //     "title: {title_str}, hwnd: {:08X}, rect: {:?} width: {}, height: {}",
+            //     hwnd.0 as usize, rect, width, height
+            // );
             windows_info.push(WindowInfo {
                 hwnd: format!("{:08X}", hwnd.0 as usize),
                 title: title_str,
@@ -108,6 +141,12 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
     unsafe {
         let mut callback = Callback(skip_hwnd, &mut callback, [0u16; 256]);
         // println!("callback_ptr: {:?}", callback_ptr);
+        // let desktop_window = GetDesktopWindow();
+        // let _ = EnumChildWindows(
+        //     Some(desktop_window),
+        //     Some(enum_windows_callback),
+        //     LPARAM(&mut callback as *mut _ as isize),
+        // );
         let _ = EnumWindows(
             Some(enum_windows_callback),
             LPARAM(&mut callback as *mut _ as isize),
@@ -126,6 +165,11 @@ pub fn get_foreground_window_info(skip_hwnd: HWND) -> Vec<WindowInfo> {
     windows_info
 }
 
+fn is_valid_class_name(class_name: &[u16]) -> bool {
+    let class_name = String::from_utf16_lossy(class_name);
+    class_name != "Windows.UI.Core.CoreWindow" && class_name != "ApplicationFrameInputSinkWindow"
+}
+
 // EnumWindows 的回调函数
 extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     let callback = unsafe { &mut *(lparam.0 as *mut Callback) };
@@ -133,8 +177,8 @@ extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     let len = unsafe { GetClassNameW(hwnd, class_name) };
     // 过滤不可见窗口和跳过窗口
     if hwnd != callback.0
-        && unsafe { IsWindowVisible(hwnd).as_bool() && !IsIconic(hwnd).as_bool() }
-        && String::from_utf16_lossy(&class_name[..len as usize]) != "Windows.UI.Core.CoreWindow"
+        && is_window_valid(hwnd)
+        && is_valid_class_name(&class_name[..len as usize])
     {
         let _ = unsafe { EnumChildWindows(Some(hwnd), Some(enum_windows_callback), lparam) };
         BOOL::from(callback.1(hwnd))

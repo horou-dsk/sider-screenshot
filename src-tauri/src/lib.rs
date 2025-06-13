@@ -60,7 +60,7 @@ pub fn run() {
     } else {
         File::create(&sider_lock_file).expect("create sider ai lock file error")
     };
-    if !f.try_lock().unwrap_or(false) {
+    if f.try_lock().is_err() {
         eprintln!("sider ai is running");
         return;
     }

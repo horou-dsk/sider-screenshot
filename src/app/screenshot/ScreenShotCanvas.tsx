@@ -112,7 +112,6 @@ const ScreenShotCanvas = React.forwardRef<
 				width: monitorInfo.width,
 				height: monitorInfo.height,
 			};
-			console.log(info);
 			ctx!.drawImage(image, info.x, info.y);
 		}
 	};

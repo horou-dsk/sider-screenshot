@@ -2,7 +2,7 @@ import { cursorPosition, getCurrentWindow } from "@tauri-apps/api/window";
 import ScreenShotToolbar from "./components/ScreenShotToolbar";
 import "./screenshot.css";
 import { invoke } from "@tauri-apps/api/core";
-import type { ShotShowWindowPayload, WindowInfo } from "../types";
+import type { Rect, ShotShowWindowPayload, WindowInfo } from "../types";
 import { getDpiPx } from "../../utils";
 import type { CanvasRenderImage, ScreenShotImage } from "./types";
 import ScreenShotCanvas, { type ScreenShotCanvasRef } from "./ScreenShotCanvas";
@@ -53,18 +53,107 @@ function ScreenShot() {
 		width: 0,
 		height: 0,
 	});
-	const cropBottom = useMemo(
-		() => window.innerHeight - (cropRect.y + cropRect.height),
-		[cropRect],
-	);
 	const [windowsInfo, setWindowsInfo] = useState<WindowInfo[]>([]);
 	const [screenShots, setScreenShots] = useState<ScreenShotImage[]>([]);
 	const [renderImages, setRenderImages] = useState<CanvasRenderImage[]>([]);
 	const screenShotCanvas = useRef<ScreenShotCanvasRef>(null);
+	const toolbarRef = useRef<HTMLDivElement>(null);
 	const imageLoaded = useMemo(
 		() => imageLoadedIndex === screenShots.length,
 		[imageLoadedIndex, screenShots],
 	);
+
+	const toolbarShow = !cropMoveing && down.selected;
+	const toolbarPosition = useMemo<{ left: number; top: number }>(() => {
+		if (!toolbarShow) {
+			return { left: 0, top: 0 };
+		}
+		if (!toolbarRef.current) {
+			return { left: 0, top: 0 };
+		}
+		const toolbarRect = toolbarRef.current.getBoundingClientRect();
+		const { x, y, width, height } = cropRect;
+		// 获取控制点所在的屏幕
+		function getControlPointMonitor(point: { x: number; y: number }):
+			| Rect
+			| undefined {
+			const monitor = screenShots.find((v) => {
+				return (
+					point.x >= getDpiPx(v.monitorInfo.x) &&
+					point.x <= getDpiPx(v.monitorInfo.x + v.monitorInfo.width) &&
+					point.y >= getDpiPx(v.monitorInfo.y) &&
+					point.y <= getDpiPx(v.monitorInfo.y + v.monitorInfo.height)
+				);
+			});
+			if (monitor) {
+				return {
+					x: getDpiPx(monitor.monitorInfo.x),
+					y: getDpiPx(monitor.monitorInfo.y),
+					width: getDpiPx(monitor.monitorInfo.width),
+					height: getDpiPx(monitor.monitorInfo.height),
+				};
+			}
+		}
+		const controlPoints = [
+			{
+				point: { x: x + width, y: y + height }, // 右下
+				calcPos: (pt: { x: number; y: number }) => ({
+					left: pt.x - toolbarRect.width - 8,
+					top: pt.y + 8,
+				}),
+				fix: (pos: any, monitor: Rect) => {
+					if (pos.left < monitor.x) pos.left = monitor.x;
+					if (pos.top + toolbarRect.height > monitor.y + monitor.height)
+						pos.top = monitor.y + monitor.height - toolbarRect.height;
+				},
+			},
+			{
+				point: { x: x + width, y }, // 右上
+				calcPos: (pt: { x: number; y: number }) => ({
+					left: pt.x - toolbarRect.width - 8,
+					top: pt.y - toolbarRect.height - 8,
+				}),
+				fix: (pos: any, monitor: Rect) => {
+					if (pos.left < monitor.x) pos.left = monitor.x;
+					if (pos.top < monitor.y) pos.top = monitor.y;
+				},
+			},
+			{
+				point: { x, y: y + height }, // 左下
+				calcPos: (pt: { x: number; y: number }) => ({
+					left: pt.x + 8,
+					top: pt.y + 8,
+				}),
+				fix: (pos: any, monitor: Rect) => {
+					if (pos.left + toolbarRect.width > monitor.x + monitor.width)
+						pos.left = monitor.x + monitor.width - toolbarRect.width;
+					if (pos.top + toolbarRect.height > monitor.y + monitor.height)
+						pos.top = monitor.y + monitor.height - toolbarRect.height;
+				},
+			},
+			{
+				point: { x, y }, // 左上
+				calcPos: (pt: { x: number; y: number }) => ({
+					left: pt.x + 8,
+					top: pt.y - toolbarRect.height - 8,
+				}),
+				fix: (pos: any, monitor: Rect) => {
+					if (pos.left < monitor.x) pos.left = monitor.x;
+					if (pos.top < monitor.y) pos.top = monitor.y;
+				},
+			},
+		];
+
+		for (const { point, calcPos, fix } of controlPoints) {
+			const monitor = getControlPointMonitor(point);
+			if (monitor) {
+				const pos = calcPos(point);
+				fix(pos, monitor);
+				return pos;
+			}
+		}
+		return { left: 0, top: 0 };
+	}, [cropRect, screenShots, toolbarShow]);
 
 	const handleSelectWindow = useCallback(
 		(clientX: number, clientY: number) => {
@@ -226,6 +315,7 @@ function ScreenShot() {
 						height: Math.round(item.height / window.devicePixelRatio),
 					})),
 				);
+				console.log(info);
 				cursorPosition().then((position) => {
 					handleSelectWindow(
 						(position.x - payload.min_x) / window.devicePixelRatio,
@@ -280,7 +370,7 @@ function ScreenShot() {
 							top: `${getDpiPx(monitorInfo.y)}px`,
 						}}
 						onLoad={(event) => {
-							setImageLoadedIndex(imageLoadedIndex + 1);
+							setImageLoadedIndex((index) => index + 1);
 							setRenderImages([
 								...renderImages,
 								{
@@ -352,42 +442,6 @@ function ScreenShot() {
 							{Math.ceil(window.devicePixelRatio * cropRect.width)} *{" "}
 							{Math.ceil(window.devicePixelRatio * cropRect.height)}
 						</div>
-						{/* 工具栏 */}
-						{!cropMoveing && down.selected && (
-							<div
-								className={classNames(
-									"absolute z-10 fade-scale-in cursor-default",
-									{
-										"bottom-2 right-2": cropBottom <= 100,
-										"-bottom-12 right-0": cropBottom > 100,
-									},
-								)}
-								onMouseDown={(event) => event.stopPropagation()}
-								onMouseUp={(event) => event.stopPropagation()}
-							>
-								<ScreenShotToolbar
-									onClose={hide}
-									onSave={() => {
-										async function save() {
-											const data = await screenShotCanvas.current?.capture();
-											data?.bytes.arrayBuffer().then((bytes) => {
-												invoke("send_capture", {
-													image: new Uint8Array(bytes),
-												}).catch((err) => {
-													console.error(err);
-												});
-											});
-											// await navigator.clipboard.write([
-											//   new ClipboardItem({ "image/png": data.bytes }),
-											// ]);
-											console.log("保存成功");
-										}
-										hide(false);
-										save();
-									}}
-								/>
-							</div>
-						)}
 						{/* 裁剪区 */}
 						<div
 							style={{
@@ -477,6 +531,49 @@ function ScreenShot() {
 					</div>
 				</div>
 			)}
+
+			{/* 工具栏 */}
+			<div
+				ref={toolbarRef}
+				// hidden={cropMoveing || !down.selected}
+				className={classNames(
+					"fixed z-10 cursor-default opacity-0",
+					{
+						"-left-[9999px]": !toolbarShow,
+					},
+					{
+						"fade-scale-in opacity-100": toolbarShow,
+					},
+				)}
+				style={{
+					left: `${toolbarPosition.left}px`,
+					top: `${toolbarPosition.top}px`,
+				}}
+				onMouseDown={(event) => event.stopPropagation()}
+				onMouseUp={(event) => event.stopPropagation()}
+			>
+				<ScreenShotToolbar
+					onClose={hide}
+					onSave={() => {
+						async function save() {
+							const data = await screenShotCanvas.current?.capture();
+							data?.bytes.arrayBuffer().then((bytes) => {
+								invoke("send_capture", {
+									image: new Uint8Array(bytes),
+								}).catch((err) => {
+									console.error(err);
+								});
+							});
+							// await navigator.clipboard.write([
+							//   new ClipboardItem({ "image/png": data.bytes }),
+							// ]);
+							console.log("保存成功");
+						}
+						hide(false);
+						save();
+					}}
+				/>
+			</div>
 		</main>
 	);
 }
