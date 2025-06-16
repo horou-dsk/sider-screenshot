@@ -1,16 +1,18 @@
 import { fetchApps, runApp } from "../../api";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 
 import "./quick-start.css";
 import { filterMatchs } from "./match";
 import QsMatchText from "./QsMatchText";
-import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useBaseApi } from "../../hooks/useBaseApi";
+import AsyncQueue from "../../utils/async_queue";
 
 function QuickStart() {
 	const [searchText, setSearchText] = useState("");
+	const queue = useRef(new AsyncQueue());
 	const { data: apps, refetch } = useQuery({
 		queryKey: ["quick-search-apps"],
 		queryFn: fetchApps,
@@ -61,8 +63,8 @@ function QuickStart() {
 					_unlisten();
 				}
 			});
-		register("Alt+X", async (event) => {
-			if (event.state === "Pressed") {
+		queue.current.add(() => {
+			return listen("alt-x", async () => {
 				if (await currentWindow.isVisible()) {
 					currentWindow.hide();
 				} else {
@@ -72,12 +74,14 @@ function QuickStart() {
 					currentWindow.setAlwaysOnTop(true);
 					currentWindow.setFocus();
 				}
-			}
+			});
 		});
 		return () => {
 			unMount = true;
 			unlisten?.();
-			unregister("Alt+X");
+			queue.current.add(async (unlisten) => {
+				unlisten();
+			});
 			window.removeEventListener("keyup", handleKeyUp);
 			observer?.disconnect();
 		};

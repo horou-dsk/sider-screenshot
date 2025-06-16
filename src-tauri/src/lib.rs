@@ -5,7 +5,8 @@ use std::fs::File;
 use serde::Serialize;
 use sider::{LocalServe, capture::screen_capture};
 use sider_local_ai::get_application_data_path;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
 use windows::{set_visible_window, set_window_style};
 
 mod constant;
@@ -69,7 +70,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_web_search::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             hide_window,
             capture_screen,
@@ -78,6 +78,26 @@ pub fn run() {
             get_local_serve_port,
         ])
         .setup(|app| {
+            let ctrl_alt_d_shortcut =
+                Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyD);
+            let alt_x_shortcut = Shortcut::new(Some(Modifiers::ALT), Code::KeyX);
+            app.handle().plugin(
+                tauri_plugin_global_shortcut::Builder::new()
+                    .with_shortcuts(vec![ctrl_alt_d_shortcut, alt_x_shortcut])?
+                    .with_handler(move |app, shortcut, event| {
+                        tracing::info!("{:?}", shortcut);
+                        if shortcut == &ctrl_alt_d_shortcut {
+                            if event.state == ShortcutState::Pressed {
+                                app.emit("ctrl-alt-d", ()).unwrap();
+                            }
+                        } else if shortcut == &alt_x_shortcut
+                            && event.state == ShortcutState::Pressed
+                        {
+                            app.emit("alt-x", ()).unwrap();
+                        }
+                    })
+                    .build(),
+            )?;
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
             app.manage(local_serve.local_serve_run(screenshot_window));

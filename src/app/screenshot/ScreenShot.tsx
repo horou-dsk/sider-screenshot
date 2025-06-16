@@ -6,7 +6,7 @@ import type { Rect, ShotShowWindowPayload, WindowInfo } from "../types";
 import { getDpiPx } from "../../utils";
 import type { CanvasRenderImage, ScreenShotImage } from "./types";
 import ScreenShotCanvas, { type ScreenShotCanvasRef } from "./ScreenShotCanvas";
-import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
+import { listen } from "@tauri-apps/api/event";
 import { screen_capture } from "./capture";
 import { base_api } from "../../utils/request";
 import {
@@ -18,6 +18,7 @@ import {
 	useState,
 } from "react";
 import classNames from "classnames";
+import AsyncQueue from "../../utils/async_queue";
 
 enum DragDirection {
 	NW = 0, // 左上
@@ -315,7 +316,6 @@ function ScreenShot() {
 						height: Math.round(item.height / window.devicePixelRatio),
 					})),
 				);
-				console.log(info);
 				cursorPosition().then((position) => {
 					handleSelectWindow(
 						(position.x - payload.min_x) / window.devicePixelRatio,
@@ -343,14 +343,17 @@ function ScreenShot() {
 		};
 	}, [handleSelectWindow, hide]);
 
+	const async_queue = useRef(new AsyncQueue());
 	useEffect(() => {
-		register("CommandOrControl+Alt+D", (event) => {
-			if (event.state === "Pressed") {
+		async_queue.current.add(() =>
+			listen("ctrl-alt-d", () => {
 				screen_capture();
-			}
-		});
+			}),
+		);
 		return () => {
-			unregister("CommandOrControl+Alt+D");
+			async_queue.current.add(async (unlisten) => {
+				unlisten();
+			});
 		};
 	}, []);
 
@@ -567,7 +570,7 @@ function ScreenShot() {
 							// await navigator.clipboard.write([
 							//   new ClipboardItem({ "image/png": data.bytes }),
 							// ]);
-							console.log("保存成功");
+							console.log("Copy success");
 						}
 						hide(false);
 						save();
