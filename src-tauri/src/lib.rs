@@ -78,26 +78,9 @@ pub fn run() {
             get_local_serve_port,
         ])
         .setup(|app| {
-            let ctrl_alt_d_shortcut =
-                Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyD);
-            let alt_x_shortcut = Shortcut::new(Some(Modifiers::ALT), Code::KeyX);
-            app.handle().plugin(
-                tauri_plugin_global_shortcut::Builder::new()
-                    .with_shortcuts(vec![ctrl_alt_d_shortcut, alt_x_shortcut])?
-                    .with_handler(move |app, shortcut, event| {
-                        tracing::info!("{:?}", shortcut);
-                        if shortcut == &ctrl_alt_d_shortcut {
-                            if event.state == ShortcutState::Pressed {
-                                app.emit("ctrl-alt-d", ()).unwrap();
-                            }
-                        } else if shortcut == &alt_x_shortcut
-                            && event.state == ShortcutState::Pressed
-                        {
-                            app.emit("alt-x", ()).unwrap();
-                        }
-                    })
-                    .build(),
-            )?;
+            if let Err(err) = init_global_shortcut(app) {
+                tracing::error!("init global shortcut error: {}", err);
+            }
             let screenshot_window = app.get_webview_window("screenshot").unwrap();
             set_window_style(screenshot_window.hwnd()?).expect("set window style error");
             app.manage(local_serve.local_serve_run(screenshot_window));
@@ -110,4 +93,25 @@ pub fn run() {
         .expect("error while running tauri application");
     drop(f);
     let _ = std::fs::remove_file(sider_lock_file);
+}
+
+fn init_global_shortcut(app: &tauri::App) -> Result<(), tauri_plugin_global_shortcut::Error> {
+    let ctrl_alt_d_shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyD);
+    let alt_x_shortcut = Shortcut::new(Some(Modifiers::ALT), Code::KeyX);
+    app.handle().plugin(
+        tauri_plugin_global_shortcut::Builder::new()
+            .with_shortcuts(vec![ctrl_alt_d_shortcut, alt_x_shortcut])?
+            .with_handler(move |app, shortcut, event| {
+                tracing::info!("{:?}", shortcut);
+                if shortcut == &ctrl_alt_d_shortcut {
+                    if event.state == ShortcutState::Pressed {
+                        app.emit("ctrl-alt-d", ()).unwrap();
+                    }
+                } else if shortcut == &alt_x_shortcut && event.state == ShortcutState::Pressed {
+                    app.emit("alt-x", ()).unwrap();
+                }
+            })
+            .build(),
+    )?;
+    Ok(())
 }
